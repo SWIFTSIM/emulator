@@ -38,6 +38,14 @@ class ModelSpecification(object):
         be used on any figures generated through swift-emulator. Can
         include LaTeX formatting as in ``matplotlib``.
 
+    Raises
+    ------
+
+    AttributeError
+        When the number of paremeters in all of the required attributes
+        are not equal (e.g. a different number of names has been provided
+        compared to the number of limits).
+
     """
 
     number_of_parameters: int = attr.ib(validator=attr.validators.instance_of(int))
