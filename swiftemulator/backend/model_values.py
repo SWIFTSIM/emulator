@@ -67,3 +67,13 @@ class ModelValues(object):
                     )
 
         return
+
+    @property
+    def number_of_variables(self) -> int:
+        """
+        Total number of variables present in all models.
+        """
+
+        total = sum([len(x["independent"]) for x in self.model_values.values()])
+
+        return total
