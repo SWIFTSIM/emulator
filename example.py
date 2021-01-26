@@ -6,6 +6,8 @@ values in a linear model.
 import swiftemulator as se
 import numpy as np
 
+np.random.seed(5330)
+
 import sys
 
 try:
@@ -43,7 +45,7 @@ model_parameters = se.ModelParameters(
 )
 
 # Simulate outputs from the ten independent models
-number_of_model_samples = 24
+number_of_model_samples = 8
 
 model_values = {}
 
@@ -70,13 +72,16 @@ generator = se.EmulatorGenerator(
 )
 
 gpe_no_linear = generator.create_gaussian_process_emulator(model_values=model_values)
-
 gpe_no_linear.build_arrays()
 gpe_no_linear.fit_model(fit_linear_model=False)
 
 gpe_with_linear = generator.create_gaussian_process_emulator(model_values=model_values)
 gpe_with_linear.build_arrays()
 gpe_with_linear.fit_model(fit_linear_model=True)
+
+gpe_with_lass = generator.create_gaussian_process_emulator(model_values=model_values)
+gpe_with_lass.build_arrays()
+gpe_with_lass.fit_model(fit_linear_model=True, lasso_model_alpha=0.2)
 
 example_independent = np.sort(np.random.rand(100))
 
@@ -90,15 +95,30 @@ y_l, yerr_l = gpe_with_linear.predict_values(
 )
 yerr_l *= 100
 
+y_lass, yerr_lass = gpe_with_lass.predict_values(
+    example_independent, model_parameters={"m": test_model}
+)
+yerr_lass *= 100
+
+
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(4, 4), constrained_layout=True)
 
 plt.fill_between(example_independent, y + yerr, y - yerr, alpha=0.5, color="C0")
 plt.fill_between(example_independent, y_l + yerr_l, y_l - yerr_l, alpha=0.5, color="C1")
+plt.fill_between(
+    example_independent, y_lass + yerr_lass, y_lass - yerr_lass, alpha=0.5, color="C2"
+)
 
 plt.plot(example_independent, y, label="Predicted (No Linear)", color="C0")
 plt.plot(example_independent, y_l, label="Predicted (With Linear)", color="C1")
+plt.plot(
+    example_independent,
+    y_lass,
+    label="Predicted (With Lasso $\\alpha=0.2$)",
+    color="C2",
+)
 
 plt.plot(
     example_independent,

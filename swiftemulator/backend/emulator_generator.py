@@ -116,7 +116,7 @@ class GaussianProcessEmulator(object):
         self.dependent_variables = dependent_variables
         self.dependent_variable_errors = dependent_variable_errors
 
-    def fit_model(self, kernel=None, fit_linear_model=False):
+    def fit_model(self, kernel=None, fit_linear_model=False, lasso_model_alpha=0.0):
         """
         Fits the GPE model.
 
@@ -129,8 +129,13 @@ class GaussianProcessEmulator(object):
             ``ExpSquaredKernel`` in George
 
         fit_linear_model, bool
-            Also fit a linear model to the data before using the
+            Also fit a linear model for the mean to the data before using the
             Gaussian Process on it?
+
+        lasso_model_alpha, float
+            Alpha for the Lasso model (only used of course when asking to
+            ``fit_linear_model``). If this is 0.0 (the default) basic linear
+            regression is used.
         """
 
         if self.independent_variables is None:
@@ -146,14 +151,17 @@ class GaussianProcessEmulator(object):
             )
 
         if fit_linear_model:
-            linear_model = lm.LinearRegression()
-            linear_model.fit(self.independent_variables, self.dependent_variables)
+            if lasso_model_alpha == 0.0:
+                linear_model = lm.LinearRegression(fit_intercept=True)
+            else:
+                linear_model = lm.Lasso(alpha=lasso_model_alpha)
 
             # Conform the model to the modelling protocol
-            linear_model = george.modeling.CallableModel(function=linear_model.predict)
+            linear_model.fit(self.independent_variables, self.dependent_variables)
+            linear_mean = george.modeling.CallableModel(function=linear_model.predict)
 
             gaussian_process = george.GP(
-                copy.copy(kernel), fit_kernel=True, mean=linear_model, fit_mean=False,
+                copy.copy(kernel), fit_kernel=True, mean=linear_mean, fit_mean=False,
             )
         else:
             gaussian_process = george.GP(copy.copy(kernel))
