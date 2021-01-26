@@ -58,3 +58,31 @@ class ModelParmeters(object):
                     "Models do not all have the same set of parameters."
                 )
 
+    def find_closest_model(self, comparison_parameters: Dict[str, float]):
+        """
+        Finds the closest model currently in this instance of
+        ``ModelParameters`` to the set of provided
+        ``comparison_parameters``.
+
+        Parameters
+        ----------
+
+        comparison_parameters, Dict[str, float]
+            Set of comparison parameters. The closest parameters,
+            and unique indentifier, of the run within the current
+            set of ``model_parameters`` to this point in
+            n-dimensional parameter space will be returned.
+        
+        Returns
+        -------
+
+        unique_identifier, Any
+            Unique identifier of the closest run.
+
+        closest_parameters, Dict[str, float]
+            Model parameters of the closest run.
+        """
+
+        raise NotImplementedError
+
+        return
