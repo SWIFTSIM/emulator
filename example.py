@@ -33,6 +33,8 @@ model_specification = se.ModelSpecification(
 )
 
 # Have ten independent models
+number_of_models = 10
+
 model_parameters = se.ModelParameters(
     model_parameters={
         run_number: {"m": gradient}
@@ -41,17 +43,18 @@ model_parameters = se.ModelParameters(
 )
 
 # Simulate outputs from the ten independent models
+number_of_model_samples = 24
+
 model_values = {}
 
-for run_number in range(10):
-    independent = np.random.rand(8)
+for run_number in range(number_of_models):
+    independent = np.random.rand(number_of_model_samples)
     # Dependent includes some scatter
-    dependent = (
-        my_true_model(independent, model_parameters.model_parameters[run_number]["m"])
-        + np.random.rand(8) * 0.1
-    )
+    dependent = my_true_model(
+        independent, model_parameters.model_parameters[run_number]["m"]
+    ) + (np.random.rand(number_of_model_samples) * 0.2 - 0.1)
     # Constant errors
-    dependent_errors = np.ones(8, dtype=np.float32) * 0.05
+    dependent_errors = np.ones(number_of_model_samples, dtype=np.float32) * 0.05
 
     model_values[run_number] = {
         "independent": independent,
