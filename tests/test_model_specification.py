@@ -28,7 +28,7 @@ def test_failure():
     """
 
     with pytest.raises(AttributeError):
-        model_spec = ModelSpecification(
+        _ = ModelSpecification(
             number_of_parameters=3,
             parameter_names=["Hello", "World", "Foo"],
             parameter_limits=[[0.0, 1.0], [0.0, 1.0]],
