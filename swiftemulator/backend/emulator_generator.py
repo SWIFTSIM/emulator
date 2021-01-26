@@ -71,9 +71,7 @@ class GaussianProcessEmulator(object):
 
         dependent_variables = np.empty((number_of_independents), dtype=np.float32)
 
-        dependent_variable_errors = np.empty(
-            (number_of_independents, 2), dtype=np.float32
-        )
+        dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
 
         self.parameter_order = self.model_specification.parameter_names
         self.ordering = []
@@ -94,18 +92,13 @@ class GaussianProcessEmulator(object):
             model_independent = this_model["independent"]
             model_dependent = this_model["dependent"]
             model_error = this_model.get(
-                "dependent_error", np.zeros((len(model_independent), 2))
+                "dependent_error", np.zeros(len(model_independent))
             )
 
-            if np.ndim(model_error) == 1:
-                # Need to force this into equal errors up and down.
-                new_model_error = np.empty(
-                    (len(model_independent), 2), dtype=np.float32
+            if np.ndim(model_error) != 1:
+                raise AttributeError(
+                    "Multiple dimensional errors are not currently supported in GPE mode"
                 )
-                new_model_error[:, 0] = model_error[:]
-                new_model_error[:, 1] = model_error[:]
-
-                model_error = new_model_error
 
             for line in range(len(model_independent)):
                 independent_variables[filled_lines][0] = model_independent[line]
@@ -148,10 +141,10 @@ class GaussianProcessEmulator(object):
             )
 
         gaussian_process = george.GP(copy.copy(kernel))
+
         # TODO: Figure out how to include non-symmetric errors.
         gaussian_process.compute(
-            x=self.independent_variables,
-            yerr=np.mean(self.dependent_variable_errors, axis=1),
+            x=self.independent_variables, yerr=self.dependent_variable_errors,
         )
 
         def negative_log_likelihood(p):
