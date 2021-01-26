@@ -23,6 +23,6 @@ setuptools.setup(
         "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
         "Operating System :: OS Independent",
     ],
-    install_requires=["numpy", "unyt", "attrs", "george", "SALib",],
+    install_requires=["numpy", "unyt", "attrs", "george", "SALib", "scikit-learn"],
     include_package_data=True,
 )
