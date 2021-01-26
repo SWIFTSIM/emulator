@@ -10,7 +10,7 @@ from typing import Dict, Hashable
 
 
 @attr.s
-class ModelParmeters(object):
+class ModelParameters(object):
     """
     Class that contains the parameters of the models, i.e.
     this does not contain any information about individual

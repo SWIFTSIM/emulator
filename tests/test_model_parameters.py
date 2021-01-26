@@ -2,7 +2,7 @@
 Tests for objects in ``swift-emulator/backend/model_specification.py``
 """
 
-from swiftemulator.backend.model_parameters import ModelParmeters
+from swiftemulator.backend.model_parameters import ModelParameters
 import pytest
 
 
@@ -13,7 +13,7 @@ def test_basic_model_parameters():
 
     my_model_parameters = {0: {"x": 1, "y": 1,}, 1: {"x": 2, "y": 1,}}
 
-    _ = ModelParmeters(model_parameters=my_model_parameters)
+    _ = ModelParameters(model_parameters=my_model_parameters)
 
     return
 
@@ -26,6 +26,6 @@ def test_basic_model_parameters_raise():
     my_model_parameters = {0: {"x": 1, "y": 1,}, 1: {"x": 2, "z": 1,}}
 
     with pytest.raises(AttributeError):
-        _ = ModelParmeters(model_parameters=my_model_parameters)
+        _ = ModelParameters(model_parameters=my_model_parameters)
 
     return
