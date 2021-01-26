@@ -69,24 +69,37 @@ generator = se.EmulatorGenerator(
     model_specification=model_specification, model_parameters=model_parameters
 )
 
-gpe = generator.create_gaussian_process_emulator(model_values=model_values)
+gpe_no_linear = generator.create_gaussian_process_emulator(model_values=model_values)
 
-gpe.build_arrays()
+gpe_no_linear.build_arrays()
+gpe_no_linear.fit_model(fit_linear_model=False)
 
-gpe.fit_model()
+gpe_with_linear = generator.create_gaussian_process_emulator(model_values=model_values)
+gpe_with_linear.build_arrays()
+gpe_with_linear.fit_model(fit_linear_model=True)
 
 example_independent = np.sort(np.random.rand(100))
 
-y, yerr = gpe.predict_values(example_independent, model_parameters={"m": test_model})
+y, yerr = gpe_no_linear.predict_values(
+    example_independent, model_parameters={"m": test_model}
+)
 yerr *= 100
+
+y_l, yerr_l = gpe_with_linear.predict_values(
+    example_independent, model_parameters={"m": test_model}
+)
+yerr_l *= 100
 
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(4, 4), constrained_layout=True)
 
-plt.fill_between(example_independent, y + yerr, y - yerr, alpha=0.5)
+plt.fill_between(example_independent, y + yerr, y - yerr, alpha=0.5, color="C0")
+plt.fill_between(example_independent, y_l + yerr_l, y_l - yerr_l, alpha=0.5, color="C1")
 
-plt.plot(example_independent, y, label="Predicted")
+plt.plot(example_independent, y, label="Predicted (No Linear)", color="C0")
+plt.plot(example_independent, y_l, label="Predicted (With Linear)", color="C1")
+
 plt.plot(
     example_independent,
     my_true_model(example_independent, test_model),

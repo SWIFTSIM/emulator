@@ -6,6 +6,7 @@ import attr
 import copy
 import numpy as np
 import george
+import sklearn.linear_model as lm
 
 from typing import Hashable, List, Optional, Dict
 
@@ -115,7 +116,7 @@ class GaussianProcessEmulator(object):
         self.dependent_variables = dependent_variables
         self.dependent_variable_errors = dependent_variable_errors
 
-    def fit_model(self, kernel=None):
+    def fit_model(self, kernel=None, fit_linear_model=False):
         """
         Fits the GPE model.
 
@@ -126,6 +127,10 @@ class GaussianProcessEmulator(object):
             The ``george`` kernel to use. The GPE here uses a copy
             of this instance. By default, this is the
             ``ExpSquaredKernel`` in George
+
+        fit_linear_model, bool
+            Also fit a linear model to the data before using the
+            Gaussian Process on it?
         """
 
         if self.independent_variables is None:
@@ -140,7 +145,18 @@ class GaussianProcessEmulator(object):
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
             )
 
-        gaussian_process = george.GP(copy.copy(kernel))
+        if fit_linear_model:
+            linear_model = lm.LinearRegression()
+            linear_model.fit(self.independent_variables, self.dependent_variables)
+
+            # Conform the model to the modelling protocol
+            linear_model = george.modeling.CallableModel(function=linear_model.predict)
+
+            gaussian_process = george.GP(
+                copy.copy(kernel), fit_kernel=True, mean=linear_model, fit_mean=False,
+            )
+        else:
+            gaussian_process = george.GP(copy.copy(kernel))
 
         # TODO: Figure out how to include non-symmetric errors.
         gaussian_process.compute(
