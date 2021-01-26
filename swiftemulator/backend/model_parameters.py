@@ -6,7 +6,7 @@ anything about the individual scaling relations!).
 
 import attr
 
-from typing import Dict, Any
+from typing import Dict, Hashable
 
 
 @attr.s
@@ -20,7 +20,7 @@ class ModelParmeters(object):
     Parameters
     ----------
 
-    model_parameters, Dict[Any, Dict[str, float]]
+    model_parameters, Dict[Hashable, Dict[str, float]]
         Free parameters of the underlying model. This is
         specified as a dictionary with the following
         structure: ``{unique_run_identifier: {parameter_name:
@@ -42,7 +42,7 @@ class ModelParmeters(object):
         When the parameters do not match between all models.
     """
 
-    model_parameters: Dict[Any, Dict[str, float]] = attr.ib()
+    model_parameters: Dict[Hashable, Dict[str, float]] = attr.ib()
 
     @model_parameters.validator
     def _check_model_parameters(self, attribute, value):
