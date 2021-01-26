@@ -70,13 +70,6 @@ gpe = generator.create_gaussian_process_emulator(model_values=model_values)
 
 gpe.build_arrays()
 
-print("Independent Variables")
-print(gpe.independent_variables)
-print("Dependent Variables")
-print(gpe.dependent_variables)
-print("Dependent Variable Errors")
-print(gpe.dependent_variable_errors)
-
 gpe.fit_model()
 
 example_independent = np.sort(np.random.rand(100))
