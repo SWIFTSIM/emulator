@@ -54,7 +54,7 @@ class GaussianProcessEmulator(object):
 
     emulator: Optional[george.GP] = None
 
-    def build_arrays(self) -> np.ndarray:
+    def build_arrays(self):
         """
         Builds the arrays for passing to `george`.
         """
