@@ -1,6 +1,6 @@
 """
 A quick example of how to use the swift emulator to 'predict'
-values in a linear model.
+values in a non-linear model.
 """
 
 import swiftemulator as se
@@ -20,18 +20,18 @@ except:
     exit(0)
 
 
-def my_true_model(x, m):
+def my_true_model(x, offset):
     """
-    A basic linear model.
+    A basic non-linear model.
     """
-    return x * m
+    return offset + offset ** 2 * x ** 0.5
 
 
 model_specification = se.ModelSpecification(
     number_of_parameters=1,
     parameter_names=["m"],
     parameter_limits=[[0.0, 1.0]],
-    parameter_printable_names=["Gradient"],
+    parameter_printable_names=["Offset"],
 )
 
 # Have ten independent models
@@ -79,9 +79,9 @@ gpe_with_linear = generator.create_gaussian_process_emulator(model_values=model_
 gpe_with_linear.build_arrays()
 gpe_with_linear.fit_model(fit_linear_model=True)
 
-gpe_with_lass = generator.create_gaussian_process_emulator(model_values=model_values)
-gpe_with_lass.build_arrays()
-gpe_with_lass.fit_model(fit_linear_model=True, lasso_model_alpha=0.2)
+lass = generator.create_linear_model_emulator(model_values=model_values)
+lass.build_arrays()
+lass.fit_model(lasso_model_alpha=0.0)
 
 example_independent = np.sort(np.random.rand(100))
 
@@ -95,10 +95,9 @@ y_l, yerr_l = gpe_with_linear.predict_values(
 )
 yerr_l *= 100
 
-y_lass, yerr_lass = gpe_with_lass.predict_values(
+y_l_only, _ = lass.predict_values(
     example_independent, model_parameters={"m": test_model}
 )
-yerr_lass *= 100
 
 
 import matplotlib.pyplot as plt
@@ -107,17 +106,12 @@ plt.figure(figsize=(4, 4), constrained_layout=True)
 
 plt.fill_between(example_independent, y + yerr, y - yerr, alpha=0.5, color="C0")
 plt.fill_between(example_independent, y_l + yerr_l, y_l - yerr_l, alpha=0.5, color="C1")
-plt.fill_between(
-    example_independent, y_lass + yerr_lass, y_lass - yerr_lass, alpha=0.5, color="C2"
-)
+
 
 plt.plot(example_independent, y, label="Predicted (No Linear)", color="C0")
 plt.plot(example_independent, y_l, label="Predicted (With Linear)", color="C1")
 plt.plot(
-    example_independent,
-    y_lass,
-    label="Predicted (With Lasso $\\alpha=0.2$)",
-    color="C2",
+    example_independent, y_l_only, label="Predicted (Only LM)", color="C2",
 )
 
 plt.plot(
@@ -128,9 +122,14 @@ plt.plot(
     label="True",
 )
 
-plt.ylabel(f"Predicted $y = {test_model} x$")
+plt.ylabel(f"Predicted $y = {test_model:3.3f} + {test_model**2:3.3f} \\sqrt{{x}}$")
 plt.xlabel("$x$")
 
-plt.legend()
+plt.legend(loc="lower right")
 
-plt.show()
+try:
+    filename = sys.argv[2]
+    plt.savefig(filename)
+except:
+    print("You can save your result by providing the second parameter as the filename.")
+    plt.show()
