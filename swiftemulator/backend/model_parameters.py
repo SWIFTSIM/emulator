@@ -107,8 +107,10 @@ class ModelParameters(object):
         pointarr = []
         for i in comparison_parameters:
             pointarr.append(comparison_parameters[i])
-        dist, ind = tree.query(
-            np.array(pointarr).reshape(1, -1), k=number_of_close_models
+        ind = tree.query(
+            np.array(pointarr).reshape(1, -1),
+            k=number_of_close_models,
+            return_distance=False,
         )
         # Return in the correct format
         print(ind[0])
