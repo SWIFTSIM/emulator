@@ -6,7 +6,7 @@ anything about the individual scaling relations!).
 
 import attr
 import numpy as np
-
+from sklearn.neighbors import KDTree
 from typing import Dict, Hashable
 
 
@@ -59,11 +59,14 @@ class ModelParameters(object):
                     "Models do not all have the same set of parameters."
                 )
 
-    def find_closest_model(self, comparison_parameters: Dict[str, float], number_of_close_models=1):
+    def find_closest_model(
+        self, comparison_parameters: Dict[str, float], number_of_close_models=1
+    ):
         """
         Finds the closest model currently in this instance of
         ``ModelParameters`` to the set of provided
-        ``comparison_parameters``.
+        ``comparison_parameters``. with the option to return
+        the closest n sets to the input
 
         Parameters
         ----------
@@ -73,35 +76,47 @@ class ModelParameters(object):
             and unique indentifier, of the run within the current
             set of ``model_parameters`` to this point in
             n-dimensional parameter space will be returned.
-        
+
+        number_of_close_models, int
+            Number of closest model that will be returned
+
+
         Returns
         -------
 
         unique_identifier, Any
-            Unique identifier of the closest run.
+            Unique identifier of the closest run(s).
 
         closest_parameters, Dict[str, float]
-            Model parameters of the closest run.
+            Model parameters of the closest run(s).
         """
-        distlist = []
+
+        # Convert the parameter dictionary to a numpy array
+        paramarr = []
         for i in self.model_parameters:
-            cartdist2 = 0
-            for j in comparison_parameters: 
-                cartdist2 += (self.model_parameters[i][j]-comparison_parameters[j])**2
-            distlist.append([i,cartdist2**(1/2)])
-        
-        sortinds = np.array(distlist)[:,0][np.argsort(np.array(distlist)[:,1])]
-        
+            temparr = []
+            for j in comparison_parameters:
+                temparr.append(self.model_parameters[i][j])
+            paramarr.append(temparr)
+        paramarr = np.array(paramarr)
+        # Save the keys to a list
+        keylist = list(self.model_parameters.keys())
+        # Construct the KDTree
+        tree = KDTree(paramarr, leaf_size=2)
+        # Convert the closest point to a numpy array
+        pointarr = []
+        for i in comparison_parameters:
+            pointarr.append(comparison_parameters[i])
+        dist, ind = tree.query(
+            np.array(pointarr).reshape(1, -1), k=number_of_close_models
+        )
+        # Return in the correct format
         if number_of_close_models == 1:
-            closestarr = sortinds[0]
-            return closestarr, self.model_parameters[closestarr]
+            return keylist[ind[0]], self.model_parameters[keylist[ind[0]]]
         else:
             closemodelsn = []
-            closemodels  = []
+            closemodels = []
             for i in range(number_of_close_models):
-                closemodelsn.append(sortinds[i])
-                closemodels.append(self.model_parameters[sortinds[i]])
+                closemodelsn.append(keylist[ind[0][i]])
+                closemodels.append(self.model_parameters[keylist[ind[0][i]]])
             return closemodelsn, closemodels
-        #raise NotImplementedError
-
-        #return
