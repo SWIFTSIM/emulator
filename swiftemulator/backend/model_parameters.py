@@ -111,8 +111,9 @@ class ModelParameters(object):
             np.array(pointarr).reshape(1, -1), k=number_of_close_models
         )
         # Return in the correct format
+        print(ind[0])
         if number_of_close_models == 1:
-            return keylist[ind[0]], self.model_parameters[keylist[ind[0]]]
+            return keylist[ind[0][0]], self.model_parameters[keylist[ind[0][0]]]
         else:
             closemodelsn = []
             closemodels = []
