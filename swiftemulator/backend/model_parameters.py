@@ -5,6 +5,7 @@ anything about the individual scaling relations!).
 """
 
 import attr
+import numpy as np
 
 from typing import Dict, Hashable
 
@@ -58,7 +59,7 @@ class ModelParameters(object):
                     "Models do not all have the same set of parameters."
                 )
 
-    def find_closest_model(self, comparison_parameters: Dict[str, float]):
+    def find_closest_model(self, comparison_parameters: Dict[str, float], number_of_close_models=1):
         """
         Finds the closest model currently in this instance of
         ``ModelParameters`` to the set of provided
@@ -82,7 +83,25 @@ class ModelParameters(object):
         closest_parameters, Dict[str, float]
             Model parameters of the closest run.
         """
+        distlist = []
+        for i in self.model_parameters:
+            cartdist2 = 0
+            for j in comparison_parameters: 
+                cartdist2 += (self.model_parameters[i][j]-comparison_parameters[j])**2
+            distlist.append([i,cartdist2**(1/2)])
+        
+        sortinds = np.array(distlist)[:,0][np.argsort(np.array(distlist)[:,1])]
+        
+        if number_of_close_models == 1:
+            closestarr = sortinds[0]
+            return closestarr, self.model_parameters[closestarr]
+        else:
+            closemodelsn = []
+            closemodels  = []
+            for i in range(number_of_close_models):
+                closemodelsn.append(sortinds[i])
+                closemodels.append(self.model_parameters[sortinds[i]])
+            return closemodelsn, closemodels
+        #raise NotImplementedError
 
-        raise NotImplementedError
-
-        return
+        #return
