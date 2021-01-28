@@ -40,7 +40,7 @@ def test_basic_emulator_generator():
         1: {
             "independent": np.arange(10),
             "dependent": np.random.rand(10),
-            "dependent_error": np.random.rand(20).reshape(10, 2),
+            "dependent_error": np.random.rand(10),
         },
         2: {"independent": np.arange(10), "dependent": np.random.rand(10),},
     }
