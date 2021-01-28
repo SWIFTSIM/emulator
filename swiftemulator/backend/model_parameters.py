@@ -60,8 +60,8 @@ class ModelParameters(object):
                 )
 
     def find_closest_model(
-        self, comparison_parameters: Dict[str, float], number_of_close_models: int = 1
-    ) -> Tuple[List[Hashable], List[Dict[str, float]]]:
+        self, comparison_parameters: Dict[str, float], number_of_close_models: int=1
+    )-> Tuple[List[Hashable], List[Dict[str, float]]]:
         """
         Finds the closest model currently in this instance of
         ``ModelParameters`` to the set of provided
@@ -84,7 +84,7 @@ class ModelParameters(object):
         Returns
         -------
 
-        unique_identifier, Tuple[List[Hashable]
+        unique_identifier, List[Hashable]
             Unique identifier of the closest run(s).
 
         closest_parameters, Dict[str, float]
@@ -95,28 +95,26 @@ class ModelParameters(object):
         parameter_ordering = list(comparison_parameters.keys())
         parameter_array = []
         model_ordering = []
-
+        
         for identifier, model in self.model_parameters.items():
             model_ordering.append(identifier)
             parameter_array.append(
                 [model[parameter] for parameter in parameter_ordering]
             )
-
+        
         parameter_array = np.array(parameter_array)
 
         tree = KDTree(parameter_array, leaf_size=2)
         # Convert the closest point to a numpy array to use for the tree
-        search_point = np.array(
-            [comparison_parameters[parameter] for parameter in parameter_ordering]
-        )
+        search_point = np.array([comparison_parameters[parameter] for parameter in parameter_ordering])
 
         ind = tree.query(
-            search_point,
+            search_point.reshape(1, -1),
             k=number_of_close_models,
             return_distance=False,
         )
         # Return in the correct format
         closest_models = [model_ordering[i] for i in ind[0]]
         closest_parameters = [self.model_parameters[i] for i in closest_models]
-
+        
         return closest_models, closest_parameters
