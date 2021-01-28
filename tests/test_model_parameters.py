@@ -12,14 +12,8 @@ def test_basic_model_parameters():
     """
 
     my_model_parameters = {
-        0: {
-            "x": 1,
-            "y": 1,
-        },
-        1: {
-            "x": 2,
-            "y": 1,
-        },
+        0: {"x": 1, "y": 1,},
+        1: {"x": 2, "y": 1,},
     }
 
     _ = ModelParameters(model_parameters=my_model_parameters)
@@ -33,14 +27,8 @@ def test_basic_model_parameters_raise():
     """
 
     my_model_parameters = {
-        0: {
-            "x": 1,
-            "y": 1,
-        },
-        1: {
-            "x": 2,
-            "z": 1,
-        },
+        0: {"x": 1, "y": 1,},
+        1: {"x": 2, "z": 1,},
     }
 
     with pytest.raises(AttributeError):
@@ -57,18 +45,9 @@ def test_find_closest_model():
     model_point = {"x": 0.4, "y": 0.9}
 
     my_model_parameters = {
-        0: {
-            "x": 1,
-            "y": 1,
-        },
-        1: {
-            "x": 2,
-            "y": 1,
-        },
-        2: {
-            "x": 0.45,
-            "y": 0.91,
-        },
+        0: {"x": 1, "y": 1,},
+        1: {"x": 2, "y": 1,},
+        2: {"x": 0.45, "y": 0.91,},
     }
 
     my_model_parameters = ModelParameters(model_parameters=my_model_parameters)
@@ -76,7 +55,9 @@ def test_find_closest_model():
 
     assert model[0] == 2
 
-    model, _ = my_model_parameters.find_closest_model(model_point, number_of_close_models=2)
+    model, _ = my_model_parameters.find_closest_model(
+        model_point, number_of_close_models=2
+    )
 
     assert model[0] == 2
 
