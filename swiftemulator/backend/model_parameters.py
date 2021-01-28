@@ -5,8 +5,9 @@ anything about the individual scaling relations!).
 """
 
 import attr
-
-from typing import Dict, Hashable
+import numpy as np
+from sklearn.neighbors import KDTree
+from typing import Dict, Hashable, List, Tuple
 
 
 @attr.s
@@ -58,11 +59,14 @@ class ModelParameters(object):
                     "Models do not all have the same set of parameters."
                 )
 
-    def find_closest_model(self, comparison_parameters: Dict[str, float]):
+    def find_closest_model(
+        self, comparison_parameters: Dict[str, float], number_of_close_models: int = 1
+    ) -> Tuple[List[Hashable], List[Dict[str, float]]]:
         """
         Finds the closest model currently in this instance of
         ``ModelParameters`` to the set of provided
-        ``comparison_parameters``.
+        ``comparison_parameters``, with the option to return
+        the closest 'n' sets to the input.
 
         Parameters
         ----------
@@ -72,17 +76,47 @@ class ModelParameters(object):
             and unique indentifier, of the run within the current
             set of ``model_parameters`` to this point in
             n-dimensional parameter space will be returned.
-        
+
+        number_of_close_models, int
+            Number of closest model that will be returned
+
+
         Returns
         -------
 
-        unique_identifier, Any
-            Unique identifier of the closest run.
+        unique_identifier, List[Hashable]
+            Unique identifier of the closest run(s).
 
-        closest_parameters, Dict[str, float]
-            Model parameters of the closest run.
+        closest_parameters, List[Dict[str, float]]
+            Model parameters of the closest run(s).
         """
 
-        raise NotImplementedError
+        # Convert the parameter dictionary to a numpy array
+        parameter_ordering = list(comparison_parameters.keys())
+        parameter_array = []
+        model_ordering = []
 
-        return
+        for identifier, model in self.model_parameters.items():
+            model_ordering.append(identifier)
+            parameter_array.append(
+                [model[parameter] for parameter in parameter_ordering]
+            )
+
+        parameter_array = np.array(parameter_array)
+
+        tree = KDTree(parameter_array, leaf_size=2)
+        # Convert the closest point to a numpy array to use for the tree
+        search_point = np.array(
+            [comparison_parameters[parameter] for parameter in parameter_ordering]
+        )
+
+        ind = tree.query(
+            search_point.reshape(1, -1),
+            k=number_of_close_models,
+            return_distance=False,
+        )
+        # Return in the correct format
+        closest_models = [model_ordering[i] for i in ind[0]]
+        closest_parameters = [self.model_parameters[i] for i in closest_models]
+
+        return closest_models, closest_parameters
