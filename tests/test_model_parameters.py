@@ -76,7 +76,9 @@ def test_find_closest_model():
 
     assert model[0] == 2
 
-    model, _ = my_model_parameters.find_closest_model(model_point, number_of_close_models=2)
+    model, _ = my_model_parameters.find_closest_model(
+        model_point, number_of_close_models=2
+    )
 
     assert model[0] == 2
 
