@@ -21,7 +21,7 @@ from scipy.optimize import minimize
 
 
 @attr.s
-class GaussianProcessInvestigator(object):
+class GaussianProcessEmulatorMCMC(object):
     """
     Generator for emulators for individual scaling relations.
 
@@ -57,6 +57,9 @@ class GaussianProcessInvestigator(object):
     dependent_variable_errors: Optional[np.array] = None
 
     emulator: Optional[george.GP] = None
+
+    hyperparameter_best_fit: Optional[np.array] = None
+    hyperparameter_samples: Optional[np.array] = None
 
     def build_arrays(self):
         """
@@ -119,7 +122,7 @@ class GaussianProcessInvestigator(object):
         self.dependent_variables = dependent_variables
         self.dependent_variable_errors = dependent_variable_errors
 
-    def investigate_hyperparameters(self, kernel=None, fit_linear_model=False, lasso_model_alpha=0.0, makeplot=True, MCMCsteps=200):
+    def fit_model(self, kernel=None, fit_linear_model=False, lasso_model_alpha=0.0, burn_in_steps=200, MCMCsteps=400, nwalkers=20):
         """
         Fits the GPE model.
 
@@ -173,7 +176,7 @@ class GaussianProcessInvestigator(object):
         gaussian_process.compute(
             x=self.independent_variables, yerr=self.dependent_variable_errors,
         )
-        
+
         def negative_log_likelihood(p):
             gaussian_process.set_parameter_vector(p)
             return -gaussian_process.log_likelihood(self.dependent_variables)
@@ -186,48 +189,65 @@ class GaussianProcessInvestigator(object):
             gaussian_process.set_parameter_vector(p)
             return gaussian_process.log_likelihood(self.dependent_variables)
 
-        #set up a MCMC sampling routine
-        nwalkers, ndim = 36, len(gaussian_process)
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_likelihood)
-        p0 = gaussian_process.get_parameter_vector() + 1e-4 * np.random.randn(nwalkers, ndim)
-        print("Running burn-in")
-        p0, _, _ = sampler.run_mcmc(p0, 400)
+        #Use scipy to find starting point to increase MCMC performance
+        p0_start = minimize(
+            fun=negative_log_likelihood,
+            x0=gaussian_process.get_parameter_vector(),
+            jac=grad_negative_log_likelihood,
+        ).x
 
-        print("Running production chain")
+        #set up a MCMC sampling routine
+        ndim = len(gaussian_process)
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_likelihood)
+        p0 = p0_start + 1e-4 * np.random.randn(nwalkers, ndim)
+        
+        p0, _, _ = sampler.run_mcmc(p0, burn_in_steps)
         sampler.run_mcmc(p0, MCMCsteps)
 
-        #get samples from the MCMC chain
-        samples = sampler.chain[:, 400:, :].reshape( (-1, ndim) )
+        samples = sampler.chain[:, burn_in_steps:, :].reshape( (-1, ndim) )
 
-        if makeplot==True:
-            figure = corner.corner( samples,labels=range(ndim), bins=40, 
+        result = np.mean(samples,axis=0)
+
+        #Save the samples and best fit for error analysis
+        self.hyperparameter_samples = samples
+        self.hyperparameter_best_fit = result
+
+        # Load in the optimal hyperparameters
+        gaussian_process.set_parameter_vector(result)
+
+        self.emulator = gaussian_process
+
+        return
+
+    def plot_hyperparameter_distribution(self):
+        """
+        Makes a cornerplot of the MCMC samples obtained when fitting the model
+        """
+        
+        if self.hyperparameter_samples is None:
+            raise AttributeError(
+                "Please train the emulator with fit_model before attempting "
+                "to look at the hyperparameters."
+            )
+        
+        ndim = len(self.emulator)
+
+        figure = corner.corner(self.hyperparameter_samples,labels=range(ndim), bins=40, 
                         hist_bin_factor=10,
                        quantiles=[0.16, 0.5, 0.84],
                        levels=( .68, .95 ),
                        color = 'k', smooth1d= 1, smooth=True, max_n_ticks=5,
                        plot_contours = True, plot_datapoints=True,  plot_density=True,
                        show_titles=True, title_kwargs={"fontsize": 15} )
-            plt.show()
-
-        # Also optimize the hyperparameter values in the emulator using scipy
-        result = minimize(
-            fun=negative_log_likelihood,
-            x0=gaussian_process.get_parameter_vector(),
-            jac=grad_negative_log_likelihood,
-        )
-
-        # Load in the optimal hyperparameters
-        gaussian_process.set_parameter_vector(result.x)
-        print("Results from scipy = ", result.x)
-
-        self.emulator = gaussian_process
+        plt.show()
 
         return
-"""
+
+
     def predict_values(
-        self, independent: np.array, model_parameters: Dict[str, float]
+        self, independent: np.array, model_parameters: Dict[str, float], use_hyperparameter_error=False, samples_for_error=100
     ) -> np.array:
-        
+        """
         Predict values from the trained emulator contained within this object.
 
         Parameters
@@ -251,7 +271,7 @@ class GaussianProcessInvestigator(object):
 
         dependent_prediction_errors, np.array
             Errors on the model predictions.
-        
+        """
 
         if self.emulator is None:
             raise AttributeError(
@@ -275,5 +295,21 @@ class GaussianProcessInvestigator(object):
             y=self.dependent_variables, t=t, return_cov=False, return_var=True
         )
 
+        if use_hyperparameter_error == True:
+            #Take a subsample of the MCMC samples
+            sample = np.random.choice(range(len(self.hyperparameter_samples[:,0])),samples_for_error,replace=False)
+            #create an array to store the predictions for different hyperparameters
+            hyperparameter_error_model_array = np.empty((len(independent),samples_for_error))
+            for i, j in zip(sample, range(len(sample))):
+                self.emulator.set_parameter_vector(self.hyperparameter_samples[i,:])
+                hyperparameter_error_model_array[:,j] = self.emulator.predict(
+                    y=self.dependent_variables, t=t, return_cov=False, return_var=False
+                )
+            #Calculate the variance caused by hyperparameters
+            hyper_errors = np.var(hyperparameter_error_model_array,axis=1)
+            self.emulator.set_parameter_vector(self.hyperparameter_best_fit)
+            errors += hyper_errors
+        
+
+
         return model, errors
-"""
