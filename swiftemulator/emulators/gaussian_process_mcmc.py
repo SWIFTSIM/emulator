@@ -127,11 +127,10 @@ class GaussianProcessEmulatorMCMC(object):
         kernel=None,
         fit_linear_model=False,
         lasso_model_alpha=0.0,
-        fit_polynomial_surface_model=False,
-        polynomial_degree=1,
-        burn_in_steps=50,
-        MCMCsteps=100,
-        nwalkers=40,
+        lasso_model_alpha: float = 0.0,
+        burn_in_steps: int = 200,
+        MCMCsteps: int = 400,
+        nwalkers: int = 20,
     ):
         """
         Fits the GPE model.
@@ -187,26 +186,6 @@ class GaussianProcessEmulatorMCMC(object):
             # Conform the model to the modelling protocol
             linear_model.fit(self.independent_variables, self.dependent_variables)
             linear_mean = george.modeling.CallableModel(function=linear_model.predict)
-
-            gaussian_process = george.GP(
-                copy.copy(kernel),
-                fit_kernel=True,
-                mean=linear_mean,
-                fit_mean=False,
-            )
-        elif fit_polynomial_surface_model:
-            polynomial_model = Pipeline(
-                [
-                    ("poly", PolynomialFeatures(degree=polynomial_degree)),
-                    ("linear", lm.LinearRegression(fit_intercept=True)),
-                ]
-            )
-
-            # Conform the model to the modelling protocol
-            polynomial_model.fit(self.independent_variables, self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(
-                function=polynomial_model.predict
-            )
 
             gaussian_process = george.GP(
                 copy.copy(kernel),
