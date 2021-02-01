@@ -122,7 +122,15 @@ class GaussianProcessEmulatorMCMC(object):
         self.dependent_variables = dependent_variables
         self.dependent_variable_errors = dependent_variable_errors
 
-    def fit_model(self, kernel=None, fit_linear_model=False, lasso_model_alpha=0.0, burn_in_steps=200, MCMCsteps=400, nwalkers=20):
+    def fit_model(
+        self,
+        kernel=None,
+        fit_linear_model=False,
+        lasso_model_alpha: float = 0.0,
+        burn_in_steps: int = 200,
+        MCMCsteps: int = 400,
+        nwalkers: int = 20,
+    ):
         """
         Fits the GPE model.
 
@@ -142,6 +150,17 @@ class GaussianProcessEmulatorMCMC(object):
             Alpha for the Lasso model (only used of course when asking to
             ``fit_linear_model``). If this is 0.0 (the default) basic linear
             regression is used.
+
+        burn_in_steps, int
+            Number of steps used for the burn-in part of the MCMC chain.
+
+        MCMCsteps, int
+            Number of steps used for sampling the likelihood by the MCMC
+            chain.
+
+        nwalkers, int
+            Number of walkers used by the MCMC
+
         """
 
         if self.independent_variables is None:
@@ -167,14 +186,18 @@ class GaussianProcessEmulatorMCMC(object):
             linear_mean = george.modeling.CallableModel(function=linear_model.predict)
 
             gaussian_process = george.GP(
-                copy.copy(kernel), fit_kernel=True, mean=linear_mean, fit_mean=False,
+                copy.copy(kernel),
+                fit_kernel=True,
+                mean=linear_mean,
+                fit_mean=False,
             )
         else:
             gaussian_process = george.GP(copy.copy(kernel))
 
         # TODO: Figure out how to include non-symmetric errors.
         gaussian_process.compute(
-            x=self.independent_variables, yerr=self.dependent_variable_errors,
+            x=self.independent_variables,
+            yerr=self.dependent_variable_errors,
         )
 
         def negative_log_likelihood(p):
@@ -189,26 +212,26 @@ class GaussianProcessEmulatorMCMC(object):
             gaussian_process.set_parameter_vector(p)
             return gaussian_process.log_likelihood(self.dependent_variables)
 
-        #Use scipy to find starting point to increase MCMC performance
+        # Use scipy to find starting point to increase MCMC performance
         p0_start = minimize(
             fun=negative_log_likelihood,
             x0=gaussian_process.get_parameter_vector(),
             jac=grad_negative_log_likelihood,
         ).x
 
-        #set up a MCMC sampling routine
+        # set up a MCMC sampling routine
         ndim = len(gaussian_process)
         sampler = emcee.EnsembleSampler(nwalkers, ndim, log_likelihood)
         p0 = p0_start + 1e-4 * np.random.randn(nwalkers, ndim)
-        
+
         p0, _, _ = sampler.run_mcmc(p0, burn_in_steps)
         sampler.run_mcmc(p0, MCMCsteps)
 
-        samples = sampler.chain[:, burn_in_steps:, :].reshape( (-1, ndim) )
+        samples = sampler.chain[:, burn_in_steps:, :].reshape((-1, ndim))
 
-        result = np.mean(samples,axis=0)
+        result = np.mean(samples, axis=0)
 
-        #Save the samples and best fit for error analysis
+        # Save the samples and best fit for error analysis
         self.hyperparameter_samples = samples
         self.hyperparameter_best_fit = result
 
@@ -223,52 +246,64 @@ class GaussianProcessEmulatorMCMC(object):
         """
         Makes a cornerplot of the MCMC samples obtained when fitting the model
         """
-        
+
         if self.hyperparameter_samples is None:
             raise AttributeError(
                 "Please train the emulator with fit_model before attempting "
                 "to look at the hyperparameters."
             )
-        
+
         ndim = len(self.emulator)
 
-        figure = corner.corner(self.hyperparameter_samples,labels=range(ndim), bins=40, 
-                        hist_bin_factor=10,
-                       quantiles=[0.16, 0.5, 0.84],
-                       levels=( .68, .95 ),
-                       color = 'k', smooth1d= 1, smooth=True, max_n_ticks=5,
-                       plot_contours = True, plot_datapoints=True,  plot_density=True,
-                       show_titles=True, title_kwargs={"fontsize": 15} )
+        _ = corner.corner(
+            self.hyperparameter_samples,
+            labels=range(ndim),
+            bins=40,
+            hist_bin_factor=10,
+            quantiles=[0.16, 0.5, 0.84],
+            levels=(0.68, 0.95),
+            color="k",
+            smooth1d=1,
+            smooth=True,
+            max_n_ticks=5,
+            plot_contours=True,
+            plot_datapoints=True,
+            plot_density=True,
+            show_titles=True,
+            title_kwargs={"fontsize": 15},
+        )
         plt.show()
 
         return
 
-
     def predict_values(
-        self, independent: np.array, model_parameters: Dict[str, float], use_hyperparameter_error=False, samples_for_error=100
+        self,
+        independent: np.array,
+        model_parameters: Dict[str, float],
+        use_hyperparameter_error: bool = False,
+        samples_for_error: int = 100,
     ) -> np.array:
         """
         Predict values from the trained emulator contained within this object.
-
         Parameters
         ----------
-
         independent, np.array
             Independent continuous variables to evaluate the emulator
             at.
-
         model_parameters: Dict[str, float]
             The point in model parameter space to create predicted
             values at.
-
+        use_hyperparameter_error, bool
+            Switch for including errors originating from uncertain
+            hyperparameters in the prediction outputs
+        samples_for_error, int
+            Number of MCMC samples to use for hyperparameter error estimation
         Returns
         -------
-
         dependent_predictions, np.array
             Array of predictions, if the emulator is a function f, these
             are the predicted values of f(independent) evaluted at the position
             of the input model_parameters.
-
         dependent_prediction_errors, np.array
             Errors on the model predictions.
         """
@@ -277,6 +312,11 @@ class GaussianProcessEmulatorMCMC(object):
             raise AttributeError(
                 "Please train the emulator with fit_model before attempting "
                 "to make predictions."
+            )
+
+        if len(self.hyperparameter_samples[:, 0]) < samples_for_error:
+            raise ValueError(
+                "Number of subsamples must be less then the total " "number of samples"
             )
 
         model_parameter_array = np.array(
@@ -296,20 +336,22 @@ class GaussianProcessEmulatorMCMC(object):
         )
 
         if use_hyperparameter_error == True:
-            #Take a subsample of the MCMC samples
-            sample = np.random.choice(range(len(self.hyperparameter_samples[:,0])),samples_for_error,replace=False)
-            #create an array to store the predictions for different hyperparameters
-            hyperparameter_error_model_array = np.empty((len(independent),samples_for_error))
+            sample = np.random.choice(
+                range(len(self.hyperparameter_samples[:, 0])),
+                samples_for_error,
+                replace=False,
+            )
+            # create an array to store the predictions for different hyperparameters
+            hyperparameter_error_model_array = np.empty(
+                (len(independent), samples_for_error)
+            )
             for i, j in zip(sample, range(len(sample))):
-                self.emulator.set_parameter_vector(self.hyperparameter_samples[i,:])
-                hyperparameter_error_model_array[:,j] = self.emulator.predict(
+                self.emulator.set_parameter_vector(self.hyperparameter_samples[i, :])
+                hyperparameter_error_model_array[:, j] = self.emulator.predict(
                     y=self.dependent_variables, t=t, return_cov=False, return_var=False
                 )
-            #Calculate the variance caused by hyperparameters
-            hyper_errors = np.var(hyperparameter_error_model_array,axis=1)
+            hyper_errors = np.var(hyperparameter_error_model_array, axis=1)
             self.emulator.set_parameter_vector(self.hyperparameter_best_fit)
             errors += hyper_errors
-        
-
 
         return model, errors
