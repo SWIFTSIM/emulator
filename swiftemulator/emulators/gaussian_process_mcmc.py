@@ -281,7 +281,7 @@ class GaussianProcessEmulatorMCMC(object):
             title_kwargs={"fontsize": 15},
         )
 
-        if filename == None:
+        if filename is None:
             plt.show()
         else:
             plt.savefig(filename, dpi=300)
@@ -292,8 +292,8 @@ class GaussianProcessEmulatorMCMC(object):
         self,
         independent: np.array,
         model_parameters: Dict[str, float],
-        use_hyperparameter_error=False,
-        samples_for_error=100,
+        use_hyperparameter_error: bool = False,
+        samples_for_error: int = 100,
     ) -> np.array:
         """
         Predict values from the trained emulator contained within this object.
@@ -325,7 +325,7 @@ class GaussianProcessEmulatorMCMC(object):
             of the input model_parameters.
 
         dependent_prediction_errors, np.array
-            Errors on the model predictions.
+            Variance on the model predictions.
         """
 
         if self.emulator is None:
