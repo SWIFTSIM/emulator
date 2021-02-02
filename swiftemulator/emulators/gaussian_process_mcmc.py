@@ -76,11 +76,9 @@ class GaussianProcessEmulatorMCMC(object):
             (number_of_independents, number_of_model_parameters + 1), dtype=np.float32
         )
 
-        dependent_variables = np.empty(
-            (number_of_independents), dtype=np.float32)
+        dependent_variables = np.empty((number_of_independents), dtype=np.float32)
 
-        dependent_variable_errors = np.empty(
-            (number_of_independents), dtype=np.float32)
+        dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
 
         self.parameter_order = self.model_specification.parameter_names
         self.ordering = []
@@ -185,10 +183,8 @@ class GaussianProcessEmulatorMCMC(object):
                 linear_model = lm.Lasso(alpha=lasso_model_alpha)
 
             # Conform the model to the modelling protocol
-            linear_model.fit(self.independent_variables,
-                             self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(
-                function=linear_model.predict)
+            linear_model.fit(self.independent_variables, self.dependent_variables)
+            linear_mean = george.modeling.CallableModel(function=linear_model.predict)
 
             gaussian_process = george.GP(
                 copy.copy(kernel),
@@ -294,8 +290,10 @@ class GaussianProcessEmulatorMCMC(object):
         else:
             plt.savefig(filename, dpi=300)
 
-        print("By using this function you solemnly swear to never try to infer anything from the hyperparameters, except\
-              whether they are converged.")
+        print(
+            "By using this function you solemnly swear to never try to infer anything from the hyperparameters, except\
+              whether they are converged."
+        )
 
         return
 

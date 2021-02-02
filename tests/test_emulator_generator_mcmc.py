@@ -24,8 +24,14 @@ def test_basic_emulator_generator():
     )
 
     my_model_parameters = {
-        0: {"x": 1, "y": 1, },
-        1: {"x": 2, "y": 1, },
+        0: {
+            "x": 1,
+            "y": 1,
+        },
+        1: {
+            "x": 2,
+            "y": 1,
+        },
         2: {"x": 3, "y": 1},
     }
 
@@ -42,7 +48,10 @@ def test_basic_emulator_generator():
             "dependent": np.random.rand(10),
             "dependent_error": np.random.rand(10),
         },
-        2: {"independent": np.arange(10), "dependent": np.random.rand(10), },
+        2: {
+            "independent": np.arange(10),
+            "dependent": np.random.rand(10),
+        },
     }
 
     model_values = ModelValues(model_values=input_model_values)
@@ -52,7 +61,8 @@ def test_basic_emulator_generator():
     )
 
     gpe = emulator_generator.create_gaussian_process_emulator_mcmc(
-        model_values=model_values)
+        model_values=model_values
+    )
 
     gpe.build_arrays()
     gpe.fit_model(MCMCsteps=1, burn_in_steps=1, nwalkers=10)
