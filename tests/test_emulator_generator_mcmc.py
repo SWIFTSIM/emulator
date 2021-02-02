@@ -46,7 +46,7 @@ def test_basic_emulator_generator():
         1: {
             "independent": np.arange(10),
             "dependent": np.random.rand(10),
-            "dependent_error": np.random.rand(20).reshape(10, 2),
+            "dependent_error": np.random.rand(10),
         },
         2: {
             "independent": np.arange(10),
@@ -60,7 +60,9 @@ def test_basic_emulator_generator():
         model_specification=model_spec, model_parameters=model_parameters
     )
 
-    gpe = emulator_generator.create_gaussian_process_emulator(model_values=model_values)
+    gpe = emulator_generator.create_gaussian_process_emulator_mcmc(
+        model_values=model_values
+    )
 
     gpe.build_arrays()
-    gpe.fit_model()
+    gpe.fit_model(MCMCsteps=1, burn_in_steps=1, nwalkers=10)
