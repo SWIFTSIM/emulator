@@ -51,6 +51,7 @@ def test_basic_emulator_generator():
         2: {
             "independent": np.arange(10),
             "dependent": np.random.rand(10),
+            "dependent_error": np.random.rand(10),
         },
     }
 
