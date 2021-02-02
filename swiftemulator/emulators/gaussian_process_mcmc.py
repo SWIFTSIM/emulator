@@ -76,9 +76,11 @@ class GaussianProcessEmulatorMCMC(object):
             (number_of_independents, number_of_model_parameters + 1), dtype=np.float32
         )
 
-        dependent_variables = np.empty((number_of_independents), dtype=np.float32)
+        dependent_variables = np.empty(
+            (number_of_independents), dtype=np.float32)
 
-        dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
+        dependent_variable_errors = np.empty(
+            (number_of_independents), dtype=np.float32)
 
         self.parameter_order = self.model_specification.parameter_names
         self.ordering = []
@@ -126,7 +128,6 @@ class GaussianProcessEmulatorMCMC(object):
         self,
         kernel=None,
         fit_linear_model=False,
-        lasso_model_alpha=0.0,
         lasso_model_alpha: float = 0.0,
         burn_in_steps: int = 200,
         MCMCsteps: int = 400,
@@ -184,8 +185,10 @@ class GaussianProcessEmulatorMCMC(object):
                 linear_model = lm.Lasso(alpha=lasso_model_alpha)
 
             # Conform the model to the modelling protocol
-            linear_model.fit(self.independent_variables, self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(function=linear_model.predict)
+            linear_model.fit(self.independent_variables,
+                             self.dependent_variables)
+            linear_mean = george.modeling.CallableModel(
+                function=linear_model.predict)
 
             gaussian_process = george.GP(
                 copy.copy(kernel),
@@ -244,7 +247,7 @@ class GaussianProcessEmulatorMCMC(object):
 
         return
 
-    def plot_hyperparameter_distribution(self, filename=None):
+    def plot_hyperparameter_distribution(self, filename=None, labels=None):
         """
         Makes a cornerplot of the MCMC samples obtained when fitting the model
 
@@ -253,6 +256,10 @@ class GaussianProcessEmulatorMCMC(object):
 
         filename, None, str
             Name for the file to which the plot is saved. Optional, if None it will show the image.
+
+        labels, None, list[Hashable]
+            labels to add to the different plots. Optional, if None it will take the kernel names
+
         """
 
         if self.hyperparameter_samples is None:
@@ -261,11 +268,12 @@ class GaussianProcessEmulatorMCMC(object):
                 "to look at the hyperparameters."
             )
 
-        ndim = len(self.emulator)
+        if labels is None:
+            labels = self.emulator.get_parameter_names()
 
         corner.corner(
             self.hyperparameter_samples,
-            labels=range(ndim),
+            labels=labels,
             bins=40,
             hist_bin_factor=10,
             quantiles=[0.16, 0.5, 0.84],
@@ -285,6 +293,9 @@ class GaussianProcessEmulatorMCMC(object):
             plt.show()
         else:
             plt.savefig(filename, dpi=300)
+
+        print("By using this function you solemnly swear to never try to infer anything from the hyperparameters, except\
+              whether they are converged.")
 
         return
 

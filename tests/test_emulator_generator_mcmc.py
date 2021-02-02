@@ -51,8 +51,8 @@ def test_basic_emulator_generator():
         model_specification=model_spec, model_parameters=model_parameters
     )
 
-    gpe = emulator_generator.create_gaussian_process_emulator(
+    gpe = emulator_generator.create_gaussian_process_emulator_mcmc(
         model_values=model_values)
 
     gpe.build_arrays()
-    gpe.fit_model()
+    gpe.fit_model(MCMCsteps=1, burn_in_steps=1, nwalkers=10)
