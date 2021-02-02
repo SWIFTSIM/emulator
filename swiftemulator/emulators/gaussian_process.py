@@ -121,10 +121,10 @@ class GaussianProcessEmulator(object):
     def fit_model(
         self,
         kernel=None,
-        fit_linear_model=False,
-        lasso_model_alpha=0.0,
-        fit_polynomial_surface_model=False,
-        polynomial_degree=1,
+        fit_linear_model: bool = False,
+        lasso_model_alpha: float = 0.0,
+        fit_polynomial_surface_model: bool = False,
+        polynomial_degree: int = 1,
     ):
         """
         Fits the GPE model.
@@ -145,6 +145,14 @@ class GaussianProcessEmulator(object):
             Alpha for the Lasso model (only used of course when asking to
             ``fit_linear_model``). If this is 0.0 (the default) basic linear
             regression is used.
+
+        fit_polynomial_surface_model, bool
+            Fit a polynomial surface to the data before using a Gaussian
+            process on it?
+
+        polynomial_degree, int
+            Maximal degree of the polynomail surface, default 1; linear for each
+            parameter
         """
 
         if self.independent_variables is None:
