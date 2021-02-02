@@ -5,3 +5,5 @@ george
 SALib
 pytest
 scikit-learn
+corner
+emcee
