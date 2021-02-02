@@ -251,10 +251,18 @@ class GaussianProcessEmulatorMCMC(object):
         ----------
 
         filename, None, str
-            Name for the file to which the plot is saved. Optional, if None it will show the image.
+            Name for the file to which the plot is saved. Optional, if None it
+            will show the image.
 
         labels, None, list[Hashable]
-            labels to add to the different plots. Optional, if None it will take the kernel names
+            labels to add to the different plots. Optional, if None it will
+            take the kernel names
+
+        Note
+        ----
+
+        By using this function you solemnly swear to never try to infer anything
+        from the hyperparameters, except whether they are converged.
 
         """
 
@@ -282,18 +290,12 @@ class GaussianProcessEmulatorMCMC(object):
             plot_datapoints=True,
             plot_density=True,
             show_titles=True,
-            title_kwargs={"fontsize": 15},
         )
 
         if filename is None:
             plt.show()
         else:
-            plt.savefig(filename, dpi=300)
-
-        print(
-            "By using this function you solemnly swear to never try to infer anything from the hyperparameters, except\
-              whether they are converged."
-        )
+            plt.savefig(filename)
 
         return
 
