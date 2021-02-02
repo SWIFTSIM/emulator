@@ -87,7 +87,7 @@ class ModelParameters(object):
         unique_identifier, List[Hashable]
             Unique identifier of the closest run(s).
 
-        closest_parameters, Dict[str, float]
+        closest_parameters, List[Dict[str, float]]
             Model parameters of the closest run(s).
         """
 
