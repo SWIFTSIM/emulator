@@ -121,9 +121,8 @@ class GaussianProcessEmulator(object):
     def fit_model(
         self,
         kernel=None,
-        fit_linear_model: bool = False,
+        fit_model: str = "none",
         lasso_model_alpha: float = 0.0,
-        fit_polynomial_surface_model: bool = False,
         polynomial_degree: int = 1,
     ):
         """
@@ -137,21 +136,18 @@ class GaussianProcessEmulator(object):
             of this instance. By default, this is the
             ``ExpSquaredKernel`` in George
 
-        fit_linear_model, bool
-            Also fit a linear model for the mean to the data before using the
-            Gaussian Process on it?
+        fit_model, str
+            Type of model to use for mean fitting, Optional, defaults
+            to none which is a pure GP modelling. Options: "linear" and
+            "polynomial"
 
         lasso_model_alpha, float
             Alpha for the Lasso model (only used of course when asking to
             ``fit_linear_model``). If this is 0.0 (the default) basic linear
             regression is used.
 
-        fit_polynomial_surface_model, bool
-            Fit a polynomial surface to the data before using a Gaussian
-            process on it?
-
         polynomial_degree, int
-            Maximal degree of the polynomail surface, default 1; linear for each
+            Maximal degree of the polynomial surface, default 1; linear for each
             parameter
         """
 
@@ -167,7 +163,7 @@ class GaussianProcessEmulator(object):
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
             )
 
-        if fit_linear_model:
+        if fit_model == "linear":
             if lasso_model_alpha == 0.0:
                 linear_model = lm.LinearRegression(fit_intercept=True)
             else:
@@ -183,7 +179,7 @@ class GaussianProcessEmulator(object):
                 mean=linear_mean,
                 fit_mean=False,
             )
-        elif fit_polynomial_surface_model:
+        elif fit_model == "polynomial":
             polynomial_model = Pipeline(
                 [
                     ("poly", PolynomialFeatures(degree=polynomial_degree)),
@@ -204,6 +200,12 @@ class GaussianProcessEmulator(object):
                 fit_mean=False,
             )
         else:
+            if fit_model != "none":
+                if self.emulator is None:
+                    raise ValueError(
+                        "Your choice of fit_model is currently not supported."
+                    )
+
             gaussian_process = george.GP(copy.copy(kernel))
 
         # TODO: Figure out how to include non-symmetric errors.
