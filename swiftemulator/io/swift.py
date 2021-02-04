@@ -16,6 +16,7 @@ from pathlib import Path
 from math import log10
 
 import yaml
+import numpy as np
 
 
 def load_pipeline_outputs(
@@ -65,7 +66,72 @@ def load_pipeline_outputs(
     
     """
 
-    return {}, {}
+    model_values = {scaling_relation: {} for scaling_relation in scaling_relations}
+
+    unit_dict = {scaling_relation: {} for scaling_relation in scaling_relations}
+
+    # Need to search for possible keys within the `lines` dictionary.
+    # Priority given by ordering of line_types
+    line_types = ["median", "mass_function", "mean"]
+    recursive_search = (
+        lambda d, k: d.get(k[0], recursive_search(d, k[1:])) if len(k) > 1 else None
+    )
+    line_search = lambda d: recursive_search(d, line_types)
+
+    for unique_identifier, filename in filenames.items():
+        with open(filename, "r") as handle:
+            raw_data = yaml.safe_load(handle)
+
+        for scaling_relation in scaling_relations:
+            line = line_search(raw_data[scaling_relation]["lines"])
+
+            if line is None:
+                continue
+
+            independent = np.array(line["centers"])
+            unit_dict[scaling_relation]["independent_units"] = line["centers_units"]
+
+            dependent = np.array(line["values"])
+            unit_dict[scaling_relation]["dependent_units"] = line["values_units"]
+
+            dependent_error = np.array(line.get("scatter", np.zeros_like(dependent)))
+
+            if scaling_relation in log_independent:
+                independent = np.log10(independent)
+                unit_dict[scaling_relation]["log_independent"] = True
+            else:
+                unit_dict[scaling_relation]["log_independent"] = False
+
+            if scaling_relation in log_dependent:
+                # Handle case of dependent errors needing to be logged.
+                if dependent_error.ndim > 1:
+                    lower = dependent - dependent_error[:0]
+                    upper = dependent + dependent_error[:1]
+                else:
+                    lower = dependent - dependent_error
+                    upper = dependent + dependent_error
+
+                dependent = np.log10(dependent)
+
+                upper_diff = np.log10(upper) - dependent
+                lower_diff = dependent - np.log10(lower)
+
+                dependent_error = 0.5 * (upper_diff + lower_diff)
+
+                unit_dict[scaling_relation]["log_dependent"] = True
+            else:
+                unit_dict[scaling_relation]["log_dependent"] = False
+
+                if dependent_error.ndim > 1:
+                    dependent_error = np.mean(dependent_error, axis=1)
+
+            model_values[scaling_relation][unique_identifier] = {
+                "independent": independent,
+                "dependent": dependent,
+                "dependent_errors": dependent_error,
+            }
+
+    return {k: ModelValues(v) for k, v in model_values.items()}, unit_dict
 
 
 def load_parameter_files(
@@ -134,23 +200,21 @@ def load_parameter_files(
 
     model_parameters = {k: None for k in filenames.keys()}
 
-    for unique_identifier in model_parameters.keys():
-        with open(filenames[unique_identifier], "r") as handle:
+    for unique_identifier, filename in filenames.items():
+        with open(filename, "r") as handle:
             full_parameter_file = yaml.load(handle, Loader=yaml.Loader)
 
-            base_parameters = {
-                parameter: float(
-                    reduce(
-                        lambda d, k: d.get(k), parameter.split(":"), full_parameter_file
-                    )
-                )
-                for parameter in parameters
-            }
+        base_parameters = {
+            parameter: float(
+                reduce(lambda d, k: d.get(k), parameter.split(":"), full_parameter_file)
+            )
+            for parameter in parameters
+        }
 
-            model_parameters[unique_identifier] = {
-                parameter: log10(value) if parameter in log_parameters else value
-                for parameter, value in base_parameters.items()
-            }
+        model_parameters[unique_identifier] = {
+            parameter: log10(value) if parameter in log_parameters else value
+            for parameter, value in base_parameters.items()
+        }
 
     if parameter_limits is None:
         parameter_limits = [
