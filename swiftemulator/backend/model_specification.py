@@ -25,7 +25,7 @@ class ModelSpecification(object):
         The names of parameters in your model; these will be 
         used to access the parameters in :class:``ModelParameters``.
 
-    parameter_limits, List[str]
+    parameter_limits, List[List[float]]
         The lower and upper limit of the input parameters. Should be
         the same length as ``parameter_names``, but each item is a list
         of length two, with a lower and upper bound. For example, in
