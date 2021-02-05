@@ -66,6 +66,15 @@ class ModelValues(object):
                         f"dependent for model {unique_id}."
                     )
 
+            acceptable_keys = ["independent", "dependent", "dependent_error"]
+
+            for key in scaling_relation.keys():
+                if key not in :
+                    raise AttributeError(
+                        f"Invalid key {key} in model values container. Choose from "
+                        f"one of {acceptable_keys}."
+                    )
+
         return
 
     @property

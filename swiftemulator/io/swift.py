@@ -128,7 +128,7 @@ def load_pipeline_outputs(
             model_values[scaling_relation][unique_identifier] = {
                 "independent": independent,
                 "dependent": dependent,
-                "dependent_errors": dependent_error,
+                "dependent_error": dependent_error,
             }
 
     return {k: ModelValues(v) for k, v in model_values.items()}, unit_dict
