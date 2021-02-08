@@ -6,8 +6,15 @@ anything about the individual scaling relations!).
 
 import attr
 import numpy as np
+import matplotlib.pyplot as plt
+import corner
+
+
 from sklearn.neighbors import KDTree
-from typing import Dict, Hashable, List, Tuple
+from typing import Dict, Hashable, List, Tuple, Optional, Union, Any
+from pathlib import Path
+
+from swiftemulator.backend.model_specification import ModelSpecification
 
 
 @attr.s
@@ -120,3 +127,61 @@ class ModelParameters(object):
         closest_parameters = [self.model_parameters[i] for i in closest_models]
 
         return closest_models, closest_parameters
+
+    def plot_model(
+        self,
+        model_specification: ModelSpecification,
+        filename: Optional[Union[Path, str]] = None,
+        corner_kwargs: Optional[Dict[str, Any]] = None,
+    ):
+        """
+        Plots the model parameters based on the model specification
+        given. Can either be saved to file, or show.
+
+        Parameters
+        ----------
+
+        model_specification, ModelSpecification
+            Model specification object for this set of parameters.
+
+        filename, Union[str, Path], optional
+            Name for the file to which the plot is saved. Optional, if None it
+            will show the image.
+
+        corner_kwargs: Dict[str, Any], optional
+            Optional key word arguments to pass to `corner` for
+            the plotting.
+
+        """
+
+        # Convert internal data to a format that corner can accept
+
+        corner_data = np.empty(
+            (len(self.model_parameters), model_specification.number_of_parameters),
+            dtype=np.float32,
+        )
+
+        for index, model in enumerate(self.model_parameters.values()):
+            corner_data[index] = np.array(
+                [model[parameter] for parameter in model_specification.parameter_names],
+                dtype=np.float32,
+            )
+
+        if corner_kwargs is None:
+            corner_kwargs = {}
+
+        corner.corner(
+            xs=corner_data,
+            labels=model_specification.parameter_printable_names,
+            range=model_specification.parameter_limits,
+            plot_contours=False,
+            plot_datapoints=True,
+            plot_density=False,
+            data_kwargs={"alpha": 1.0},
+            **corner_kwargs,
+        )
+
+        if filename is None:
+            plt.show()
+        else:
+            plt.savefig(filename)
