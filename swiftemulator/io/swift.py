@@ -4,13 +4,16 @@ I/O functions for reading in SWIFT simulation data.
 Includes functions to read parameters to
 instances of :class:``ModelParameters``, and functions
 to read model data to instances of :class:``ModelValues``.
+
+Also includes functions to write out :class:``ModelParameters``
+as files, based on a base parameter file.
 """
 
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
 
-from typing import List, Optional, Dict, Hashable, Tuple, Union
+from typing import List, Optional, Dict, Hashable, Tuple, Union, Callable
 from functools import reduce
 from pathlib import Path
 from math import log10
@@ -198,7 +201,7 @@ def load_parameter_files(
                     "not available in main list of parameters."
                 )
 
-    model_parameters = {k: None for k in filenames.keys()}
+    read_parameters = {k: None for k in filenames.keys()}
 
     for unique_identifier, filename in filenames.items():
         with open(filename, "r") as handle:
@@ -211,7 +214,7 @@ def load_parameter_files(
             for parameter in parameters
         }
 
-        model_parameters[unique_identifier] = {
+        read_parameters[unique_identifier] = {
             parameter: log10(value) if parameter in log_parameters else value
             for parameter, value in base_parameters.items()
         }
@@ -219,8 +222,8 @@ def load_parameter_files(
     if parameter_limits is None:
         parameter_limits = [
             [
-                min([model[parameter] for model in model_parameters.values()]),
-                max([model[parameter] for model in model_parameters.values()]),
+                min([model[parameter] for model in read_parameters.values()]),
+                max([model[parameter] for model in read_parameters.values()]),
             ]
             for parameter in parameters
         ]
@@ -232,6 +235,82 @@ def load_parameter_files(
         parameter_printable_names=parameter_printable_names,
     )
 
-    model_parameters = ModelParameters(model_parameters=model_parameters)
+    model_parameters = ModelParameters(model_parameters=read_parameters)
 
     return model_specification, model_parameters
+
+
+def write_parameter_files(
+    filenames: Dict[Hashable, Path],
+    model_parameters: ModelParameters,
+    parameter_transforms: Optional[Dict[str, Callable]] = None,
+    base_parameter_file: Optional[Path] = None,
+):
+    """
+    Writes parameter files, containing the parameters from a 
+    :class:`ModelParameters` instance, based on a base parameter
+    file.
+
+    Parameters
+    ----------
+
+    filenames: Dict[Hashable, Path]
+        Dictionary stating where to write each parameter file, based
+        upon the unique identifiers of each run in ``model_parameters``.
+
+    model_parameters: ModelParameters
+        Varied parameters to write in the output files.
+
+    parameter_transforms: Dict[str, Callable], optional
+        Parameter transformation functions for transforming parameter values
+        before writing. Parameters may be generated (and emulated) in a
+        space that is very different to their meaning in the code. Hence,
+        this parameter allows for a transformation (for instance, a logrithmic
+        transformation). For each parameter that should be transformed (keys)
+        there should be a function taking the emulated value, transforming it
+        into the code value. For instance, if a parameter is emulated in
+        logarithmic space, this should be ``lambda x: 10**x``.
+
+    base_parameter_file: Path, optional
+        Base parameter file to read. The parameters specified in
+        ``model_parameters`` will be overwritten when writing each
+        individual file, but the rest will remain the same.
+
+    Notes
+    -----
+
+    Also changes the value of ``MetaData:run_name`` to the unique
+    identifiers.
+    """
+
+    if base_parameter_file is not None:
+        with open(base_parameter_file, "r") as handle:
+            base_parameters = yaml.load(handle, Loader=yaml.Loader)
+    else:
+        base_parameters = {}
+
+    if parameter_transforms is None:
+        parameter_transforms = {}
+
+    for identifier, filename in filenames.items():
+        parameters = base_parameters.copy()
+
+        for parameter, value in {
+            "MetaData:run_name": str(identifier),
+            **model_parameters.model_parameters[identifier],
+        }.items():
+            section, key = parameter.split(":")
+
+            transform = parameter_transforms.get(parameter, lambda x: x)
+
+            try:
+                parameters[section][key] = transform(value)
+            except KeyError:
+                parameters[section] = {}
+                parameters[section][key] = transform(value)
+
+        with open(filename, "w") as handle:
+            yaml.dump(parameters, handle, default_flow_style=False)
+
+    return
+
