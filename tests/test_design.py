@@ -21,7 +21,6 @@ def test_create_hypercube():
     )
 
     hypercube = create_hypercube(model_specification=model_spec, number_of_samples=120,)
-    hypercube.plot_model(model_specification=model_spec, filename="test_model_spec.png")
 
     for model in hypercube.model_parameters.values():
         for parameter, limits in zip(
