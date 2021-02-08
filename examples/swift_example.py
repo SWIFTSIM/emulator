@@ -4,7 +4,7 @@ a single simulation is left out and then emulated.
 
 Requires the data available at:
 
-``http://http://virgodb.cosma.dur.ac.uk/swift-webstorage/IOExamples/emulator_output.zip``
+``http://virgodb.cosma.dur.ac.uk/swift-webstorage/IOExamples/emulator_output.zip``
 """
 
 from swiftemulator.io.swift import load_parameter_files, load_pipeline_outputs
@@ -18,7 +18,7 @@ import numpy as np
 
 import os
 
-files = [Path(x) for x in glob("./emulator_data/input_data/*.yml")]
+files = [Path(x) for x in glob("./emulator_output/input_data/*.yml")]
 
 filenames = {filename.stem: filename for filename in files}
 
@@ -44,15 +44,15 @@ spec, parameters = load_parameter_files(
         "$f_{\\rm E, min}$",
         "$f_{\\rm E, max}$",
         "$n_{Z}$",
-        "$n_{\\rm H, 0}$",
+        "$\\log_{10}$ $n_{\\rm H, 0}$",
         "$n_{n}$",
-        "$C_{\\rm eff}$",
-        "$\\alpha_{\\rm V}$",
-        "AGN $\\Delta T",
+        "$\\log_{10}$ $C_{\\rm eff}$",
+        "$\\log_{10}$ $\\alpha_{\\rm V}$",
+        "AGN $\\log_{10}$ $\\Delta T$",
     ],
 )
 
-value_files = [Path(x) for x in glob("./emulator_data/output_data/*.yml")]
+value_files = [Path(x) for x in glob("./emulator_output/output_data/*.yml")]
 
 filenames = {filename.stem: filename for filename in value_files}
 
