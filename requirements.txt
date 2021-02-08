@@ -7,3 +7,6 @@ pytest
 scikit-learn
 corner
 emcee
+black
+pyyaml
+pyDOE
