@@ -125,8 +125,10 @@ class GaussianProcessEmulatorMCMC(object):
     def fit_model(
         self,
         kernel=None,
-        fit_linear_model=False,
+        fit_linear_model: bool = False,
         lasso_model_alpha: float = 0.0,
+        fit_polynomial_surface_model: bool = False,
+        polynomial_degree: int = 1,
         burn_in_steps: int = 200,
         MCMCsteps: int = 400,
         nwalkers: int = 20,
@@ -150,6 +152,14 @@ class GaussianProcessEmulatorMCMC(object):
             Alpha for the Lasso model (only used of course when asking to
             ``fit_linear_model``). If this is 0.0 (the default) basic linear
             regression is used.
+
+        fit_polynomial_surface_model, bool
+            Fit a polynomial surface to the data before using a Gaussian
+            process on it?
+
+        polynomial_degree, int
+            Maximal degree of the polynomail surface, default 1; linear for each
+            parameter
 
         burn_in_steps, int
             Optional: Number of steps used for the burn-in part of the MCMC chain.
@@ -185,6 +195,26 @@ class GaussianProcessEmulatorMCMC(object):
             # Conform the model to the modelling protocol
             linear_model.fit(self.independent_variables, self.dependent_variables)
             linear_mean = george.modeling.CallableModel(function=linear_model.predict)
+
+            gaussian_process = george.GP(
+                copy.copy(kernel),
+                fit_kernel=True,
+                mean=linear_mean,
+                fit_mean=False,
+            )
+        elif fit_polynomial_surface_model:
+            polynomial_model = Pipeline(
+                [
+                    ("poly", PolynomialFeatures(degree=polynomial_degree)),
+                    ("linear", lm.LinearRegression(fit_intercept=True)),
+                ]
+            )
+
+            # Conform the model to the modelling protocol
+            polynomial_model.fit(self.independent_variables, self.dependent_variables)
+            linear_mean = george.modeling.CallableModel(
+                function=polynomial_model.predict
+            )
 
             gaussian_process = george.GP(
                 copy.copy(kernel),
