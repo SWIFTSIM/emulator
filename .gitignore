@@ -1,2 +1,8 @@
 *.pytest_cache/*
 *__pycache__*
+swiftemulator.egg-info/*
+env/*
+
+examples/emulator_output*/*
+
+*.png

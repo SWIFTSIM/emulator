@@ -197,10 +197,7 @@ class GaussianProcessEmulatorMCMC(object):
             linear_mean = george.modeling.CallableModel(function=linear_model.predict)
 
             gaussian_process = george.GP(
-                copy.copy(kernel),
-                fit_kernel=True,
-                mean=linear_mean,
-                fit_mean=False,
+                copy.copy(kernel), fit_kernel=True, mean=linear_mean, fit_mean=False,
             )
         elif fit_polynomial_surface_model:
             polynomial_model = Pipeline(
@@ -217,18 +214,14 @@ class GaussianProcessEmulatorMCMC(object):
             )
 
             gaussian_process = george.GP(
-                copy.copy(kernel),
-                fit_kernel=True,
-                mean=linear_mean,
-                fit_mean=False,
+                copy.copy(kernel), fit_kernel=True, mean=linear_mean, fit_mean=False,
             )
         else:
             gaussian_process = george.GP(copy.copy(kernel))
 
         # TODO: Figure out how to include non-symmetric errors.
         gaussian_process.compute(
-            x=self.independent_variables,
-            yerr=self.dependent_variable_errors,
+            x=self.independent_variables, yerr=self.dependent_variable_errors,
         )
 
         def negative_log_likelihood(p):
@@ -258,7 +251,7 @@ class GaussianProcessEmulatorMCMC(object):
         p0, _, _ = sampler.run_mcmc(p0, burn_in_steps)
         sampler.run_mcmc(p0, MCMCsteps)
 
-        samples = sampler.chain[:, burn_in_steps:, :].reshape((-1, ndim))
+        samples = sampler.get_chain()[:, burn_in_steps:, :].reshape((-1, ndim))
 
         result = np.mean(samples, axis=0)
 
