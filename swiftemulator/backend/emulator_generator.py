@@ -14,6 +14,7 @@ from .model_values import ModelValues
 
 from swiftemulator.emulators.gaussian_process import GaussianProcessEmulator
 from swiftemulator.emulators.gaussian_process_mcmc import GaussianProcessEmulatorMCMC
+from swiftemulator.emulators.gaussian_process_bins import GaussianProcessEmulatorBinned
 from swiftemulator.emulators.linear_model import LinearModelEmulator
 
 
@@ -79,7 +80,7 @@ class EmulatorGenerator(object):
         """
         Creates the object needed for the hyperparameter_investigator
         function
-c
+
         Parameters
         ----------
 
@@ -95,6 +96,32 @@ c
         """
 
         return GaussianProcessEmulatorMCMC(
+            model_specification=self.model_specification,
+            model_parameters=self.model_parameters,
+            model_values=model_values,
+        )
+
+    def create_gaussian_process_emulator_bins(
+        self, model_values: ModelValues
+    ) -> GaussianProcessEmulatorBinned:
+        """
+        Creates the object needed for the binned emulator
+
+        Parameters
+        ----------
+
+        model_values, ModelValues
+            The model values structure for this given scaling relation.
+            This specifies the training data for the emulator.
+
+        Returns
+        -------
+
+        emulator, GaussianProcessEmulatorMCMC
+            The built emulator ready for analysis of hyperparameters
+        """
+
+        return GaussianProcessEmulatorBinned(
             model_specification=self.model_specification,
             model_parameters=self.model_parameters,
             model_values=model_values,
@@ -126,4 +153,3 @@ c
             model_parameters=self.model_parameters,
             model_values=model_values,
         )
-
