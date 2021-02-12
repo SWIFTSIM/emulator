@@ -174,14 +174,13 @@ class GaussianProcessEmulatorBinned(object):
             dependent_variables = bin_model_values[unique_identifier]["dependent"]
             dependent_variable_errors = bin_model_values[unique_identifier]["dependent_errors"]
 
-            if kernel is None:
-                number_of_kernel_dimensions = (
-                    self.model_specification.number_of_parameters
-                )
+            number_of_kernel_dimensions = (
+                self.model_specification.number_of_parameters
+            )
 
-                kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
-                    np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
-                )
+            kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
+                np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
+            )
 
             if fit_model == "linear":
                 if lasso_model_alpha == 0.0:
@@ -224,10 +223,9 @@ class GaussianProcessEmulatorBinned(object):
                 )
             else:
                 if fit_model != "none":
-                    if self.emulator is None:
-                        raise ValueError(
-                            "Your choice of fit_model is currently not supported."
-                        )
+                    raise ValueError(
+                        "Your choice of fit_model is currently not supported."
+                    )
 
                 gaussian_process = george.GP(copy.copy(kernel))
 
