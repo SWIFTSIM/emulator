@@ -21,7 +21,7 @@ from scipy.optimize import minimize
 
 
 @attr.s
-class GaussianProcessEmulatorBinned(object):
+class GaussianProcessEmulatorBins(object):
     """
     Generator for emulators for individual scaling relations.
     Uses a GP for each seperate bin.
@@ -97,8 +97,8 @@ class GaussianProcessEmulatorBinned(object):
                 if len(bin_independent_uniq[bin_independent_uniq == bin_centers[index]]) != 0:
                     bin_dependent_uniq = model_values[unique_identifier][
                         "dependent"][bin_independent_uniq == bin_centers[index]][0]
-                    bin_dependent_errors_uniq = model_values[unique_identifier][
-                        "dependent_error"][bin_independent_uniq == bin_centers[index]][0]
+                    bin_dependent_errors_uniq = model_values[unique_identifier].get(
+                        "dependent_error", np.zeros(len(bin_independent_uniq)))[bin_independent_uniq == bin_centers[index]][0]
                     bin_independent_uniq = bin_independent_uniq[bin_independent_uniq ==
                                                                 bin_centers[index]][0]
                     bin_variables_uniq = np.array(

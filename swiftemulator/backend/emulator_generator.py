@@ -14,7 +14,7 @@ from .model_values import ModelValues
 
 from swiftemulator.emulators.gaussian_process import GaussianProcessEmulator
 from swiftemulator.emulators.gaussian_process_mcmc import GaussianProcessEmulatorMCMC
-from swiftemulator.emulators.gaussian_process_bins import GaussianProcessEmulatorBinned
+from swiftemulator.emulators.gaussian_process_bins import GaussianProcessEmulatorBins
 from swiftemulator.emulators.linear_model import LinearModelEmulator
 
 
@@ -103,7 +103,7 @@ class EmulatorGenerator(object):
 
     def create_gaussian_process_emulator_bins(
         self, model_values: ModelValues
-    ) -> GaussianProcessEmulatorBinned:
+    ) -> GaussianProcessEmulatorBins:
         """
         Creates the object needed for the binned emulator
 
@@ -121,7 +121,7 @@ class EmulatorGenerator(object):
             The built emulator ready for analysis of hyperparameters
         """
 
-        return GaussianProcessEmulatorBinned(
+        return GaussianProcessEmulatorBins(
             model_specification=self.model_specification,
             model_parameters=self.model_parameters,
             model_values=model_values,
