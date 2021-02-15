@@ -67,3 +67,17 @@ class ModelSpecification(object):
             )
         if self.parameter_printable_names is None:
             self.parameter_printable_names = self.parameter_names
+
+    @property
+    def salib_problem(self):
+        """
+        Generates the ``SALib`` ``problem`` dictionary.
+        """
+
+        problem = {
+            "num_vars": self.number_of_parameters,
+            "names": self.parameter_names,
+            "bounds": self.parameter_limits,
+        }
+
+        return problem
