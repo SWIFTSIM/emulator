@@ -57,10 +57,13 @@ class CrossCheck(object):
     leave_out_order: Optional[List[int]] = None
     cross_emulators: Optional[Dict[Hashable, george.GP]] = None
 
-    def build_emulators(self, kernel=None,
-                        fit_model: str = "none",
-                        lasso_model_alpha: float = 0.0,
-                        polynomial_degree: int = 1,):
+    def build_emulators(
+        self,
+        kernel=None,
+        fit_model: str = "none",
+        lasso_model_alpha: float = 0.0,
+        polynomial_degree: int = 1,
+    ):
         """
         Build a dictonary with an emulator for each simulation
         where the data of that simulation is left out
@@ -84,8 +87,12 @@ class CrossCheck(object):
             )
 
             emulator.build_arrays()
-            emulator.fit_model(kernel=kernel, fit_model=fit_model,
-                               lasso_model_alpha=lasso_model_alpha, polynomial_degree=polynomial_degree)
+            emulator.fit_model(
+                kernel=kernel,
+                fit_model=fit_model,
+                lasso_model_alpha=lasso_model_alpha,
+                polynomial_degree=polynomial_degree,
+            )
 
             emulators[unique_identifier] = emulator
 
@@ -113,9 +120,13 @@ class CrossCheck(object):
         for unique_identifier in self.cross_emulators.keys():
             fig, ax = plt.subplots(constrained_layout=True)
 
-            emulated, emulated_error = self.cross_emulators[unique_identifier].predict_values(
-                emulate_at, model_parameters=self.model_parameters.model_parameters[
-                    unique_identifier]
+            emulated, emulated_error = self.cross_emulators[
+                unique_identifier
+            ].predict_values(
+                emulate_at,
+                model_parameters=self.model_parameters.model_parameters[
+                    unique_identifier
+                ],
             )
 
             ax.fill_between(
@@ -130,7 +141,9 @@ class CrossCheck(object):
             ax.errorbar(
                 self.model_values.model_values[unique_identifier]["independent"],
                 self.model_values.model_values[unique_identifier]["dependent"],
-                yerr=self.model_values.model_values[unique_identifier]["dependent_error"],
+                yerr=self.model_values.model_values[unique_identifier][
+                    "dependent_error"
+                ],
                 label="True",
                 marker=".",
                 linestyle="none",
@@ -167,17 +180,21 @@ class CrossCheck(object):
             y_model = self.model_values.model_values[unique_identifier]["dependent"]
 
             emulated, _ = self.cross_emulators[unique_identifier].predict_values(
-                x_model, model_parameters=self.model_parameters.model_parameters[
-                    unique_identifier])
+                x_model,
+                model_parameters=self.model_parameters.model_parameters[
+                    unique_identifier
+                ],
+            )
 
             if use_dependent_error:
-                y_model_error = self.model_values.model_values[unique_identifier]["dependent_error"]
-                uniq_mean_squared = ((y_model-emulated)/y_model_error)**2
+                y_model_error = self.model_values.model_values[unique_identifier][
+                    "dependent_error"
+                ]
+                uniq_mean_squared = ((y_model - emulated) / y_model_error) ** 2
             else:
-                uniq_mean_squared = (y_model-emulated)**2
+                uniq_mean_squared = (y_model - emulated) ** 2
 
             mean_squared_dict[unique_identifier] = uniq_mean_squared
-            total_mean_squared = np.append(
-                total_mean_squared, uniq_mean_squared)
+            total_mean_squared = np.append(total_mean_squared, uniq_mean_squared)
 
         return np.mean(total_mean_squared), mean_squared_dict
