@@ -65,7 +65,7 @@ class CrossCheck(object):
         Build a dictonary with an emulator for each simulation
         where the data of that simulation is left out
 
-        Note: this take a long time
+        Note: this can take a long time
         """
 
         model_values = self.model_values
@@ -152,6 +152,13 @@ class CrossCheck(object):
         """
         Calculates the mean squared per simulation and the total mean squared
         of the entire set of left-out simulations.
+
+        Parameters
+        ----------
+
+        use_dependent_error: boolean
+            Use the simulation errors as weights for the mean squared calulation.
+            Default is false.
         """
         mean_squared_dict = {}
         total_mean_squared = np.array([])
