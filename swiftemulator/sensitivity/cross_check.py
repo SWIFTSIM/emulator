@@ -161,7 +161,7 @@ class CrossCheck(object):
             else:
                 plt.savefig(foldername + f"/leave_out_{unique_identifier}.png")
 
-    def get_mean_squared(self, use_dependent_error: bool = False):
+    def get_mean_squared(self, use_dependent_error: bool = False, use_y_as_error: bool = False, use_squared_difference: bool = True):
         """
         Calculates the mean squared per simulation and the total mean squared
         of the entire set of left-out simulations.
@@ -170,6 +170,13 @@ class CrossCheck(object):
         ----------
 
         use_dependent_error: boolean
+            Use the simulation errors as weights for the mean squared calulation.
+            Default is false.
+
+        use_y_as_error: boolean
+            Use the model y values as the weights for the calculation. 
+
+        use_squared_difference: boolean
             Use the simulation errors as weights for the mean squared calulation.
             Default is false.
         """
@@ -186,15 +193,23 @@ class CrossCheck(object):
                 ],
             )
 
-            if use_dependent_error:
+            if use_y_as_error:
+                y_model_error = y_model
+            else:
                 y_model_error = self.model_values.model_values[unique_identifier][
                     "dependent_error"
                 ]
-                uniq_mean_squared = ((y_model - emulated) / y_model_error) ** 2
+
+            if use_dependent_error:
+                uniq_mean_squared = ((y_model - emulated) / y_model_error)
             else:
-                uniq_mean_squared = (y_model - emulated) ** 2
+                uniq_mean_squared = (y_model - emulated)
+
+            if use_squared_difference:
+                uniq_mean_squared = uniq_mean_squared**2
 
             mean_squared_dict[unique_identifier] = uniq_mean_squared
-            total_mean_squared = np.append(total_mean_squared, uniq_mean_squared)
+            total_mean_squared = np.append(
+                total_mean_squared, uniq_mean_squared)
 
         return np.mean(total_mean_squared), mean_squared_dict
