@@ -287,7 +287,7 @@ class GaussianProcessEmulatorBins(object):
             Variance on the model predictions.
         """
 
-        unique_bin_identifiers = self.bin_model_values.keys()
+        unique_bin_identifiers = self.bin_centers.keys()
         bin_centers = self.bin_centers
         bin_model_values = self.bin_model_values
 
