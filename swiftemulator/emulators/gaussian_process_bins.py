@@ -64,65 +64,72 @@ class GaussianProcessEmulatorBins(object):
 
     def build_arrays(self):
         """
-        Builds the arrays for passing to `george`.
+        Builds the arrays for passing to `george`. As we aim to build
+        a emulator for each dependent bin, this creates a dictionary containing
+        the dependent, dependent errors and the variables beloning to each bin
+        in a format the `george` likes. It also links this to the bin centers,
+        which are stored as a separate dictionary.
         """
 
         model_values = self.model_values.model_values
         model_parameters = self.model_parameters.model_parameters
         self.parameter_order = self.model_specification.parameter_names
         number_of_model_parameters = self.model_specification.number_of_parameters
-        unique_identifiers = self.model_values.model_values.keys()
+        unique_identifiers = list(self.model_values.model_values.keys())
 
         independent_values = np.array([])
         for unique_identifier in unique_identifiers:
             independent_values = np.append(
-                independent_values, model_values[unique_identifier]["independent"])
+                independent_values, model_values[unique_identifier]["independent"]
+            )
 
-        bin_centers_array = np.unique(independent_values)
-        self.n_bins = len(bin_centers_array)
+        bin_centers = np.unique(independent_values)
 
-        bin_centers = {}
-        for index in range(self.n_bins):
-            bin_centers[index] = bin_centers_array[index]
+        self.n_bins = len(bin_centers)
 
         self.bin_centers = bin_centers
 
         bin_model_values = {}
-        for index in bin_centers.keys():
-            bin_variables = np.array([])
-            bin_dependent = np.array([])
-            bin_dependent_errors = np.array([])
+        for index, bin_center in enumerate(bin_centers):
+            bin_variables = []
+            bin_dependent = []
+            bin_dependent_errors = []
             for unique_identifier in unique_identifiers:
-                bin_independent_uniq = model_values[unique_identifier]["independent"]
-                if len(bin_independent_uniq[bin_independent_uniq == bin_centers[index]]) != 0:
-                    bin_dependent_uniq = model_values[unique_identifier][
-                        "dependent"][bin_independent_uniq == bin_centers[index]][0]
-                    bin_dependent_errors_uniq = model_values[unique_identifier].get(
-                        "dependent_error", np.zeros(len(bin_independent_uniq)))[bin_independent_uniq == bin_centers[index]][0]
-                    bin_independent_uniq = bin_independent_uniq[bin_independent_uniq ==
-                                                                bin_centers[index]][0]
-                    bin_variables_uniq = np.array(
-                        [
-                            model_parameters[unique_identifier][parameter]
-                            for parameter in self.parameter_order
-                        ]
+                uniq_model_values = model_values[unique_identifier]
+                bin_independent_uniq = uniq_model_values["independent"]
+                bin_mask = bin_independent_uniq == bin_center
+                if len(bin_independent_uniq[bin_mask]) == 0:
+                    continue
+
+                bin_dependent_uniq = uniq_model_values["dependent"][bin_mask][0]
+                bin_dependent_errors_uniq = uniq_model_values.get(
+                    "dependent_error", np.zeros(len(bin_independent_uniq))
+                )[bin_mask][0]
+                bin_independent_uniq = bin_independent_uniq[bin_mask][0]
+                bin_variables_uniq = np.array(
+                    [
+                        model_parameters[unique_identifier][parameter]
+                        for parameter in self.parameter_order
+                    ]
+                )
+                bin_dependent.append(bin_dependent_uniq)
+                bin_dependent_errors.append(bin_dependent_errors_uniq)
+                bin_variables.append(bin_variables_uniq)
+
+                if np.ndim(bin_dependent_errors) != 1:
+                    raise AttributeError(
+                        "Multiple dimensional errors are not currently supported in GPE mode"
                     )
-                    bin_dependent = np.append(
-                        bin_dependent, bin_dependent_uniq)
-                    bin_dependent_errors = np.append(
-                        bin_dependent_errors, bin_dependent_errors_uniq)
-                    bin_variables = np.append(
-                        bin_variables, bin_variables_uniq)
 
-                    if np.ndim(bin_dependent_errors) != 1:
-                        raise AttributeError(
-                            "Multiple dimensional errors are not currently supported in GPE mode"
-                        )
+            bin_variables = np.array(bin_variables).reshape(
+                (int(len(bin_dependent)), number_of_model_parameters)
+            )
 
-            bin_variables = bin_variables.reshape(
-                (int(len(bin_dependent)), number_of_model_parameters))
-            variabledict = {"independent": bin_variables,
-                            "dependent": bin_dependent, "dependent_errors": bin_dependent_errors}
+            variabledict = {
+                "independent": bin_variables,
+                "dependent": np.array(bin_dependent).flatten(),
+                "dependent_errors": np.array(bin_dependent_errors).flatten(),
+            }
             bin_model_values[index] = variabledict
 
         self.bin_model_values = bin_model_values
@@ -172,11 +179,11 @@ class GaussianProcessEmulatorBins(object):
         for unique_identifier in unique_bin_identifiers:
             independent_variables = bin_model_values[unique_identifier]["independent"]
             dependent_variables = bin_model_values[unique_identifier]["dependent"]
-            dependent_variable_errors = bin_model_values[unique_identifier]["dependent_errors"]
+            dependent_variable_errors = bin_model_values[unique_identifier][
+                "dependent_errors"
+            ]
 
-            number_of_kernel_dimensions = (
-                self.model_specification.number_of_parameters
-            )
+            number_of_kernel_dimensions = self.model_specification.number_of_parameters
 
             kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
@@ -189,10 +196,10 @@ class GaussianProcessEmulatorBins(object):
                     linear_model = lm.Lasso(alpha=lasso_model_alpha)
 
                 # Conform the model to the modelling protocol
-                linear_model.fit(independent_variables,
-                                 dependent_variables)
+                linear_model.fit(independent_variables, dependent_variables)
                 linear_mean = george.modeling.CallableModel(
-                    function=linear_model.predict)
+                    function=linear_model.predict
+                )
 
                 gaussian_process = george.GP(
                     copy.copy(kernel),
@@ -209,8 +216,7 @@ class GaussianProcessEmulatorBins(object):
                 )
 
                 # Conform the model to the modelling protocol
-                polynomial_model.fit(
-                    independent_variables, dependent_variables)
+                polynomial_model.fit(independent_variables, dependent_variables)
                 linear_mean = george.modeling.CallableModel(
                     function=polynomial_model.predict
                 )
@@ -259,8 +265,7 @@ class GaussianProcessEmulatorBins(object):
 
         return
 
-    def predict_values(self, model_parameters: Dict[str, float]
-                       ) -> np.array:
+    def predict_values(self, model_parameters: Dict[str, float]) -> np.array:
         """
         Predict values from the trained emulator contained within this object.
 
@@ -287,7 +292,7 @@ class GaussianProcessEmulatorBins(object):
             Variance on the model predictions.
         """
 
-        unique_bin_identifiers = self.bin_centers.keys()
+        unique_bin_identifiers = self.bin_model_values.keys()
         bin_centers = self.bin_centers
         bin_model_values = self.bin_model_values
 
@@ -298,14 +303,15 @@ class GaussianProcessEmulatorBins(object):
             )
 
         model_parameter_array = np.array(
-            [model_parameters[parameter]
-                for parameter in self.parameter_order]
+            [model_parameters[parameter] for parameter in self.parameter_order]
         )
 
         model_parameter_array_sample = np.append(
-            0.98*model_parameter_array, model_parameter_array)
+            0.98 * model_parameter_array, model_parameter_array
+        )
         model_parameter_array_sample = np.append(
-            model_parameter_array_sample, 1.02 * model_parameter_array).reshape(3, len(model_parameter_array))
+            model_parameter_array_sample, 1.02 * model_parameter_array
+        ).reshape(3, len(model_parameter_array))
 
         x_array = np.empty(len(unique_bin_identifiers), dtype=np.float32)
         y_array = np.empty(len(unique_bin_identifiers), dtype=np.float32)
