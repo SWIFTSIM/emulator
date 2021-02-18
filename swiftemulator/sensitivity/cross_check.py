@@ -12,7 +12,7 @@ import sklearn.linear_model as lm
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
-import pathlib
+from pathlib import Path
 
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_values import ModelValues
@@ -60,11 +60,11 @@ class CrossCheck(object):
 
     def build_emulators(
         self,
-        hide_progress: bool = True,
         kernel=None,
         fit_model: str = "none",
         lasso_model_alpha: float = 0.0,
         polynomial_degree: int = 1,
+        hide_progress: bool = True,
     ):
         """
         Build a dictonary with an emulator for each simulation
@@ -74,10 +74,6 @@ class CrossCheck(object):
 
         Parameters
         ----------
-
-        hide_progress: bool
-            Option to display a tqdm bar when creating the emulators,
-            Default is hide progress bar
 
         kernel, george.kernels
             The ``george`` kernel to use. The GPE here uses a copy
@@ -97,6 +93,11 @@ class CrossCheck(object):
         polynomial_degree, int
             Maximal degree of the polynomial surface, default 1; linear for each
             parameter
+
+        hide_progress: bool
+            Option to display a tqdm bar when creating the emulators,
+            Default is hide progress bar
+
 
         """
 
@@ -131,7 +132,9 @@ class CrossCheck(object):
 
         return
 
-    def plot_results(self, emulate_at: np.array, output_path: Union[str, pathlib.Path] = None):
+    def plot_results(
+        self, emulate_at: np.array, output_path: Optional[Union[str, Path]] = None
+    ):
         """
         Make a plot of each of the leave_out emulators vs
         the original data.
@@ -188,10 +191,14 @@ class CrossCheck(object):
             if output_path is None:
                 plt.show()
             else:
-                plt.savefig(
-                    output_path + f"/leave_out_{unique_identifier}.png")
+                plt.savefig(Path(output_path) / f"leave_out_{unique_identifier}.png")
 
-    def get_mean_squared(self, use_dependent_error: bool = False, use_y_as_error: bool = False, use_squared_difference: bool = True):
+    def get_mean_squared(
+        self,
+        use_dependent_error: bool = False,
+        use_y_as_error: bool = False,
+        use_squared_difference: bool = True,
+    ):
         """
         Calculates the mean squared per simulation and the total mean squared
         of the entire set of left-out simulations.
@@ -204,7 +211,7 @@ class CrossCheck(object):
             Default is false.
 
         use_y_as_error: boolean
-            Use the model y values as the weights for the calculation. 
+            Use the model y values as the weights for the calculation.
 
         use_squared_difference: boolean
             Use the simulation errors as weights for the mean squared calulation.
@@ -231,15 +238,14 @@ class CrossCheck(object):
                 ]
 
             if use_dependent_error:
-                uniq_mean_squared = ((y_model - emulated) / y_model_error)
+                uniq_mean_squared = (y_model - emulated) / y_model_error
             else:
-                uniq_mean_squared = (y_model - emulated)
+                uniq_mean_squared = y_model - emulated
 
             if use_squared_difference:
-                uniq_mean_squared = uniq_mean_squared**2
+                uniq_mean_squared = uniq_mean_squared ** 2
 
             mean_squared_dict[unique_identifier] = uniq_mean_squared
-            total_mean_squared = np.append(
-                total_mean_squared, uniq_mean_squared)
+            total_mean_squared = np.append(total_mean_squared, uniq_mean_squared)
 
         return np.mean(total_mean_squared), mean_squared_dict
