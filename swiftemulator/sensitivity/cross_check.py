@@ -18,14 +18,16 @@ from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_values import ModelValues
 from swiftemulator.backend.model_specification import ModelSpecification
 
-from swiftemulator.emulators.gaussian_process_bins import GaussianProcessEmulatorBins
+from swiftemulator.emulators.gaussian_process import GaussianProcessEmulator
+from swiftemulator.emulators.gaussian_process_mcmc import GaussianProcessEmulatorMCMC
+from swiftemulator.emulators.linear_model import LinearModelEmulator
 
 
 from typing import List, Dict, Tuple, Union, Optional, Hashable
 
 
 @attr.s
-class CrossCheckBins(object):
+class CrossCheck(object):
     """
     Generator for emulators for leave one out checks.
 
@@ -94,7 +96,9 @@ class CrossCheckBins(object):
 
         hide_progress: bool
             Option to display a tqdm bar when creating the emulators,
-            Default is to hide progress bar.
+            Default is hide progress bar
+
+
         """
 
         model_values = self.model_values
@@ -106,14 +110,13 @@ class CrossCheckBins(object):
         for unique_identifier in tqdm(self.leave_out_order, disable=hide_progress):
             left_out_data = model_values.model_values.pop(unique_identifier)
 
-            emulator = GaussianProcessEmulatorBins(
+            emulator = GaussianProcessEmulator(
                 model_specification=self.model_specification,
                 model_parameters=self.model_parameters,
                 model_values=model_values,
             )
 
             emulator.build_arrays()
-
             emulator.fit_model(
                 kernel=kernel,
                 fit_model=fit_model,
@@ -131,6 +134,7 @@ class CrossCheckBins(object):
 
     def plot_results(
         self,
+        emulate_at: np.array,
         output_path: Optional[Union[str, Path]] = None,
         xlabel: Optional[str] = None,
         ylabel: Optional[str] = None,
@@ -141,6 +145,9 @@ class CrossCheckBins(object):
 
         Parameters
         ----------
+
+        emulate_at: np.array
+            independent array where the emulator is evaluated.
 
         output_path: Union[str, Path], optional
             Optional, name of the folder where you want to save
@@ -156,9 +163,10 @@ class CrossCheckBins(object):
         for unique_identifier in self.cross_emulators.keys():
             fig, ax = plt.subplots()
 
-            emulate_at, emulated, emulated_error = self.cross_emulators[
+            emulated, emulated_error = self.cross_emulators[
                 unique_identifier
             ].predict_values(
+                emulate_at,
                 model_parameters=self.model_parameters.model_parameters[
                     unique_identifier
                 ],
@@ -210,15 +218,15 @@ class CrossCheckBins(object):
         Parameters
         ----------
 
-        use_dependent_error: bool
-            Use the simulation errors as weights for the mean squared calculation.
+        use_dependent_error: boolean
+            Use the simulation errors as weights for the mean squared calulation.
             Default is false.
 
         use_y_as_error: boolean
             Use the model y values as the weights for the calculation.
 
         use_squared_difference: boolean
-            Use the simulation errors as weights for the mean squared calculation.
+            Use the simulation errors as weights for the mean squared calulation.
             Default is false.
 
         Returns
@@ -238,13 +246,12 @@ class CrossCheckBins(object):
             x_model = self.model_values.model_values[unique_identifier]["independent"]
             y_model = self.model_values.model_values[unique_identifier]["dependent"]
 
-            _, emulated, _ = self.cross_emulators[unique_identifier].predict_values(
+            emulated, _ = self.cross_emulators[unique_identifier].predict_values(
+                x_model,
                 model_parameters=self.model_parameters.model_parameters[
                     unique_identifier
                 ],
             )
-
-            emulated = emulated[: len(x_model)]
 
             if use_y_as_error:
                 y_model_error = y_model
@@ -262,6 +269,6 @@ class CrossCheckBins(object):
                 uniq_mean_squared = uniq_mean_squared ** 2
 
             mean_squared_dict[unique_identifier] = uniq_mean_squared
-            total_mean_squared = total_mean_squared.append(uniq_mean_squared)
+            total_mean_squared.append(uniq_mean_squared)
 
         return np.mean(total_mean_squared), mean_squared_dict
