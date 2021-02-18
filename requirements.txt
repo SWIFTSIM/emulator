@@ -10,3 +10,4 @@ emcee
 black
 pyyaml
 pyDOE
+tqdm

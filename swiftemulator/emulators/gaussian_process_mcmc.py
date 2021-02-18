@@ -16,6 +16,8 @@ from typing import Hashable, List, Optional, Dict
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import Pipeline
 
 from scipy.optimize import minimize
 
@@ -76,9 +78,11 @@ class GaussianProcessEmulatorMCMC(object):
             (number_of_independents, number_of_model_parameters + 1), dtype=np.float32
         )
 
-        dependent_variables = np.empty((number_of_independents), dtype=np.float32)
+        dependent_variables = np.empty(
+            (number_of_independents), dtype=np.float32)
 
-        dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
+        dependent_variable_errors = np.empty(
+            (number_of_independents), dtype=np.float32)
 
         self.parameter_order = self.model_specification.parameter_names
         self.ordering = []
@@ -193,8 +197,10 @@ class GaussianProcessEmulatorMCMC(object):
                 linear_model = lm.Lasso(alpha=lasso_model_alpha)
 
             # Conform the model to the modelling protocol
-            linear_model.fit(self.independent_variables, self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(function=linear_model.predict)
+            linear_model.fit(self.independent_variables,
+                             self.dependent_variables)
+            linear_mean = george.modeling.CallableModel(
+                function=linear_model.predict)
 
             gaussian_process = george.GP(
                 copy.copy(kernel), fit_kernel=True, mean=linear_mean, fit_mean=False,
@@ -208,7 +214,8 @@ class GaussianProcessEmulatorMCMC(object):
             )
 
             # Conform the model to the modelling protocol
-            polynomial_model.fit(self.independent_variables, self.dependent_variables)
+            polynomial_model.fit(self.independent_variables,
+                                 self.dependent_variables)
             linear_mean = george.modeling.CallableModel(
                 function=polynomial_model.predict
             )
