@@ -12,6 +12,7 @@ import sklearn.linear_model as lm
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.pipeline import Pipeline
 from tqdm import tqdm
+import pathlib
 
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_values import ModelValues
@@ -59,6 +60,7 @@ class CrossCheck(object):
 
     def build_emulators(
         self,
+        hide_progress: bool = True,
         kernel=None,
         fit_model: str = "none",
         lasso_model_alpha: float = 0.0,
@@ -69,6 +71,33 @@ class CrossCheck(object):
         where the data of that simulation is left out
 
         Note: this can take a long time
+
+        Parameters
+        ----------
+
+        hide_progress: bool
+            Option to display a tqdm bar when creating the emulators,
+            Default is hide progress bar
+
+        kernel, george.kernels
+            The ``george`` kernel to use. The GPE here uses a copy
+            of this instance. By default, this is the
+            ``ExpSquaredKernel`` in George
+
+        fit_model, str
+            Type of model to use for mean fitting, Optional, defaults
+            to none which is a pure GP modelling. Options: "linear" and
+            "polynomial"
+
+        lasso_model_alpha, float
+            Alpha for the Lasso model (only used of course when asking to
+            ``fit_linear_model``). If this is 0.0 (the default) basic linear
+            regression is used.
+
+        polynomial_degree, int
+            Maximal degree of the polynomial surface, default 1; linear for each
+            parameter
+
         """
 
         model_values = self.model_values
@@ -77,7 +106,7 @@ class CrossCheck(object):
 
         emulators = {}
 
-        for unique_identifier in tqdm(self.leave_out_order):
+        for unique_identifier in tqdm(self.leave_out_order, disable=hide_progress):
             left_out_data = model_values.model_values.pop(unique_identifier)
 
             emulator = GaussianProcessEmulator(
@@ -102,7 +131,7 @@ class CrossCheck(object):
 
         return
 
-    def plot_results(self, emulate_at: np.array, foldername: str = None):
+    def plot_results(self, emulate_at: np.array, output_path: Union[str, pathlib.Path] = None):
         """
         Make a plot of each of the leave_out emulators vs
         the original data.
@@ -113,12 +142,12 @@ class CrossCheck(object):
         emulate_at: np.array
             independent array where the emulator is evaluated.
 
-        foldername: str, None
+        output_path: str Path, None
             Optional, name of the folder where you want to save
             the figures.
         """
         for unique_identifier in self.cross_emulators.keys():
-            fig, ax = plt.subplots(constrained_layout=True)
+            fig, ax = plt.subplots()
 
             emulated, emulated_error = self.cross_emulators[
                 unique_identifier
@@ -156,10 +185,11 @@ class CrossCheck(object):
             plt.ylabel("Log(Mass Function)")
             plt.legend()
             plt.title(f"Leave Out Run {unique_identifier}")
-            if foldername is None:
+            if output_path is None:
                 plt.show()
             else:
-                plt.savefig(foldername + f"/leave_out_{unique_identifier}.png")
+                plt.savefig(
+                    output_path + f"/leave_out_{unique_identifier}.png")
 
     def get_mean_squared(self, use_dependent_error: bool = False, use_y_as_error: bool = False, use_squared_difference: bool = True):
         """
