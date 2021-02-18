@@ -58,9 +58,9 @@ class GaussianProcessEmulatorBins(object):
     dependent_variable_errors: Optional[np.array] = None
 
     n_bins: int = None
-    bin_model_values: Dict[Hashable, Dict[str, np.array]] = None
-    bin_centers: Dict[Hashable, float] = None
-    bin_gaussian_process: Dict[Hashable, george.GP] = None
+    bin_model_values: List[Dict[str, np.array]] = None
+    bin_centers: List[float] = None
+    bin_gaussian_process: List[george.GP] = None
 
     def build_arrays(self):
         """
@@ -77,28 +77,29 @@ class GaussianProcessEmulatorBins(object):
         number_of_model_parameters = self.model_specification.number_of_parameters
         unique_identifiers = list(self.model_values.model_values.keys())
 
-        independent_values = np.array([])
-        for unique_identifier in unique_identifiers:
-            independent_values = np.append(
-                independent_values, model_values[unique_identifier]["independent"]
-            )
-
-        bin_centers = np.unique(independent_values)
+        bin_centers = np.unique(
+            [model_values[uid]["independent"] for uid in unique_identifiers]
+        )
 
         self.n_bins = len(bin_centers)
-
         self.bin_centers = bin_centers
 
-        bin_model_values = {}
-        for index, bin_center in enumerate(bin_centers):
+        bin_model_values = []
+
+        for bin_center in bin_centers:
             bin_variables = []
             bin_dependent = []
             bin_dependent_errors = []
+
             for unique_identifier in unique_identifiers:
                 uniq_model_values = model_values[unique_identifier]
                 bin_independent_uniq = uniq_model_values["independent"]
+
+                # Which one of our bins corresponds to the bin of interest?
+                # bin_mask only has one (or zero) True values.
                 bin_mask = bin_independent_uniq == bin_center
-                if len(bin_independent_uniq[bin_mask]) == 0:
+
+                if not bin_mask.any():
                     continue
 
                 bin_dependent_uniq = uniq_model_values["dependent"][bin_mask][0]
@@ -106,12 +107,12 @@ class GaussianProcessEmulatorBins(object):
                     "dependent_error", np.zeros(len(bin_independent_uniq))
                 )[bin_mask][0]
                 bin_independent_uniq = bin_independent_uniq[bin_mask][0]
-                bin_variables_uniq = np.array(
-                    [
-                        model_parameters[unique_identifier][parameter]
-                        for parameter in self.parameter_order
-                    ]
-                )
+
+                bin_variables_uniq = [
+                    model_parameters[unique_identifier][parameter]
+                    for parameter in self.parameter_order
+                ]
+
                 bin_dependent.append(bin_dependent_uniq)
                 bin_dependent_errors.append(bin_dependent_errors_uniq)
                 bin_variables.append(bin_variables_uniq)
@@ -125,12 +126,13 @@ class GaussianProcessEmulatorBins(object):
                 (int(len(bin_dependent)), number_of_model_parameters)
             )
 
-            variabledict = {
-                "independent": bin_variables,
-                "dependent": np.array(bin_dependent).flatten(),
-                "dependent_errors": np.array(bin_dependent_errors).flatten(),
-            }
-            bin_model_values[index] = variabledict
+            bin_model_values.append(
+                {
+                    "independent": bin_variables,
+                    "dependent": np.array(bin_dependent).flatten(),
+                    "dependent_errors": np.array(bin_dependent_errors).flatten(),
+                }
+            )
 
         self.bin_model_values = bin_model_values
 
@@ -144,7 +146,7 @@ class GaussianProcessEmulatorBins(object):
         polynomial_degree: int = 1,
     ):
         """
-        Fits the GPE model to each bin seperatly.
+        Fits the GPE model to each bin separately.
 
         Parameters
         ----------
@@ -169,19 +171,18 @@ class GaussianProcessEmulatorBins(object):
             parameter
         """
 
-        unique_bin_identifiers = self.bin_model_values.keys()
-        bin_model_values = self.bin_model_values
-
         if self.bin_model_values is None:
             self.build_arrays()
 
-        bin_gaussian_process = {}
-        for unique_identifier in unique_bin_identifiers:
-            independent_variables = bin_model_values[unique_identifier]["independent"]
-            dependent_variables = bin_model_values[unique_identifier]["dependent"]
-            dependent_variable_errors = bin_model_values[unique_identifier][
-                "dependent_errors"
-            ]
+        unique_bin_identifiers = list(range(self.n_bins))
+        bin_model_values = self.bin_model_values
+
+        bin_gaussian_process = []
+
+        for bin_index in unique_bin_identifiers:
+            independent_variables = bin_model_values[bin_index]["independent"]
+            dependent_variables = bin_model_values[bin_index]["dependent"]
+            dependent_variable_errors = bin_model_values[bin_index]["dependent_errors"]
 
             number_of_kernel_dimensions = self.model_specification.number_of_parameters
 
@@ -197,15 +198,8 @@ class GaussianProcessEmulatorBins(object):
 
                 # Conform the model to the modelling protocol
                 linear_model.fit(independent_variables, dependent_variables)
-                linear_mean = george.modeling.CallableModel(
+                mean_model = george.modeling.CallableModel(
                     function=linear_model.predict
-                )
-
-                gaussian_process = george.GP(
-                    copy.copy(kernel),
-                    fit_kernel=True,
-                    mean=linear_mean,
-                    fit_mean=False,
                 )
             elif fit_model == "polynomial":
                 polynomial_model = Pipeline(
@@ -217,28 +211,24 @@ class GaussianProcessEmulatorBins(object):
 
                 # Conform the model to the modelling protocol
                 polynomial_model.fit(independent_variables, dependent_variables)
-                linear_mean = george.modeling.CallableModel(
+                mean_model = george.modeling.CallableModel(
                     function=polynomial_model.predict
                 )
-
-                gaussian_process = george.GP(
-                    copy.copy(kernel),
-                    fit_kernel=True,
-                    mean=linear_mean,
-                    fit_mean=False,
-                )
+            elif fit_model == "none":
+                mean_model = None
             else:
                 if fit_model != "none":
                     raise ValueError(
                         "Your choice of fit_model is currently not supported."
                     )
 
-                gaussian_process = george.GP(copy.copy(kernel))
+            gaussian_process = george.GP(
+                copy.copy(kernel), fit_kernel=True, mean=mean_model, fit_mean=False,
+            )
 
             # TODO: Figure out how to include non-symmetric errors.
             gaussian_process.compute(
-                x=independent_variables,
-                yerr=dependent_variable_errors,
+                x=independent_variables, yerr=dependent_variable_errors,
             )
 
             def negative_log_likelihood(p):
@@ -259,7 +249,7 @@ class GaussianProcessEmulatorBins(object):
             # Load in the optimal hyperparameters
             gaussian_process.set_parameter_vector(result.x)
 
-            bin_gaussian_process[unique_identifier] = gaussian_process
+            bin_gaussian_process.append(gaussian_process)
 
         self.bin_gaussian_process = bin_gaussian_process
 
@@ -292,10 +282,6 @@ class GaussianProcessEmulatorBins(object):
             Variance on the model predictions.
         """
 
-        unique_bin_identifiers = self.bin_model_values.keys()
-        bin_centers = self.bin_centers
-        bin_model_values = self.bin_model_values
-
         if self.bin_gaussian_process is None:
             raise AttributeError(
                 "Please train the emulator with fit_model before attempting "
@@ -306,6 +292,8 @@ class GaussianProcessEmulatorBins(object):
             [model_parameters[parameter] for parameter in self.parameter_order]
         )
 
+        # George must predict a value for more than one point at a time, so
+        # generate two fake points either side of the one of interest.
         model_parameter_array_sample = np.append(
             0.98 * model_parameter_array, model_parameter_array
         )
@@ -313,23 +301,26 @@ class GaussianProcessEmulatorBins(object):
             model_parameter_array_sample, 1.02 * model_parameter_array
         ).reshape(3, len(model_parameter_array))
 
-        x_array = np.empty(len(unique_bin_identifiers), dtype=np.float32)
-        y_array = np.empty(len(unique_bin_identifiers), dtype=np.float32)
-        y_error_array = np.empty(len(unique_bin_identifiers), dtype=np.float32)
+        model_iterator = zip(self.bin_gaussian_process, self.bin_model_values,)
 
-        for index, unique_identifier in enumerate(unique_bin_identifiers):
+        dependent_predictions = []
+        dependent_prediction_errors = []
 
-            x_array[index] = bin_centers[unique_identifier]
-
-            y = bin_model_values[unique_identifier]["dependent"]
-
-            uniq_gp = self.bin_gaussian_process[unique_identifier]
-
-            model, errors = uniq_gp.predict(
-                y=y, t=model_parameter_array_sample, return_cov=False, return_var=True
+        for gp, model_values in enumerate(model_iterator):
+            model, errors = gp.predict(
+                y=model_values["dependent"],
+                t=model_parameter_array_sample,
+                return_cov=False,
+                return_var=True,
             )
 
-            y_array[index] = model[1]
-            y_error_array[index] = errors[1]
+            # Remove fake points required to ensure george returns a prediction.
+            dependent_predictions.append(model[1])
+            dependent_prediction_errors.append(errors[1])
 
-        return x_array, y_array, y_error_array
+        return (
+            self.bin_centers.copy(),
+            np.array(dependent_predictions),
+            np.array(dependent_prediction_errors),
+        )
+

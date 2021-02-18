@@ -94,7 +94,7 @@ class CrossCheckBins(object):
 
         hide_progress: bool
             Option to display a tqdm bar when creating the emulators,
-            Default is hide progress bar
+            Default is to hide progress bar.
         """
 
         model_values = self.model_values
@@ -113,6 +113,7 @@ class CrossCheckBins(object):
             )
 
             emulator.build_arrays()
+
             emulator.fit_model(
                 kernel=kernel,
                 fit_model=fit_model,
@@ -139,7 +140,7 @@ class CrossCheckBins(object):
         emulate_at: np.array
             independent array where the emulator is evaluated.
 
-        foldername: str, None
+        output_path: Union[str, Path], optional
             Optional, name of the folder where you want to save
             the figures.
         """
@@ -177,14 +178,15 @@ class CrossCheckBins(object):
 
             ax.plot(emulate_at, emulated, label="Emulated", color="C1")
 
-            plt.xlabel("Log($M_*$ / M$_\odot$)")
-            plt.ylabel("Log(Mass Function)")
-            plt.legend()
-            plt.title(f"Leave Out Run {unique_identifier}")
-            if foldername is None:
+            ax.set_xlabel("Log($M_*$ / M$_\odot$)")
+            ax.set_ylabel("Log(Mass Function)")
+            ax.legend()
+            ax.set_title(f"Leave Out Run {unique_identifier}")
+
+            if output_path is None:
                 plt.show()
             else:
-                plt.savefig(Path(output_path) / f"leave_out_{unique_identifier}.png")
+                fig.savefig(Path(output_path) / f"leave_out_{unique_identifier}.png")
 
     def get_mean_squared(
         self,
@@ -200,18 +202,29 @@ class CrossCheckBins(object):
         ----------
 
         use_dependent_error: bool
-            Use the simulation errors as weights for the mean squared calulation.
+            Use the simulation errors as weights for the mean squared calculation.
             Default is false.
 
         use_y_as_error: boolean
             Use the model y values as the weights for the calculation.
 
         use_squared_difference: boolean
-            Use the simulation errors as weights for the mean squared calulation.
+            Use the simulation errors as weights for the mean squared calculation.
             Default is false.
+
+        Returns
+        -------
+
+        total_square_mean: float
+            Mean (square) error across the bins.
+
+        mean_squared_dict: Dict[Hashable, float]
+            Error per unique identifier.
         """
+
         mean_squared_dict = {}
-        total_mean_squared = np.array([])
+        total_mean_squared = []
+
         for unique_identifier in self.cross_emulators.keys():
             x_model = self.model_values.model_values[unique_identifier]["independent"]
             y_model = self.model_values.model_values[unique_identifier]["dependent"]
@@ -240,6 +253,6 @@ class CrossCheckBins(object):
                 uniq_mean_squared = uniq_mean_squared ** 2
 
             mean_squared_dict[unique_identifier] = uniq_mean_squared
-            total_mean_squared = np.append(total_mean_squared, uniq_mean_squared)
+            total_mean_squared = total_mean_squared.append(uniq_mean_squared)
 
         return np.mean(total_mean_squared), mean_squared_dict
