@@ -78,7 +78,11 @@ class GaussianProcessEmulatorBins(object):
         unique_identifiers = list(self.model_values.model_values.keys())
 
         bin_centers = np.unique(
-            [model_values[uid]["independent"] for uid in unique_identifiers]
+            [
+                item
+                for uid in unique_identifiers
+                for item in model_values[uid]["independent"]
+            ]
         )
 
         self.n_bins = len(bin_centers)
