@@ -262,6 +262,6 @@ class CrossCheckBins(object):
                 uniq_mean_squared = uniq_mean_squared ** 2
 
             mean_squared_dict[unique_identifier] = uniq_mean_squared
-            total_mean_squared = total_mean_squared.append(uniq_mean_squared)
+            total_mean_squared.extend(uniq_mean_squared)
 
         return np.mean(total_mean_squared), mean_squared_dict

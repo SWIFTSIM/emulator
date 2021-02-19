@@ -227,12 +227,16 @@ class GaussianProcessEmulatorBins(object):
                     )
 
             gaussian_process = george.GP(
-                copy.copy(kernel), fit_kernel=True, mean=mean_model, fit_mean=False,
+                copy.copy(kernel),
+                fit_kernel=True,
+                mean=mean_model,
+                fit_mean=False,
             )
 
             # TODO: Figure out how to include non-symmetric errors.
             gaussian_process.compute(
-                x=independent_variables, yerr=dependent_variable_errors,
+                x=independent_variables,
+                yerr=dependent_variable_errors,
             )
 
             def negative_log_likelihood(p):
@@ -305,12 +309,15 @@ class GaussianProcessEmulatorBins(object):
             model_parameter_array_sample, 1.02 * model_parameter_array
         ).reshape(3, len(model_parameter_array))
 
-        model_iterator = zip(self.bin_gaussian_process, self.bin_model_values,)
+        model_iterator = zip(
+            self.bin_gaussian_process,
+            self.bin_model_values,
+        )
 
         dependent_predictions = []
         dependent_prediction_errors = []
 
-        for gp, model_values in enumerate(model_iterator):
+        for gp, model_values in model_iterator:
             model, errors = gp.predict(
                 y=model_values["dependent"],
                 t=model_parameter_array_sample,
@@ -327,4 +334,3 @@ class GaussianProcessEmulatorBins(object):
             np.array(dependent_predictions),
             np.array(dependent_prediction_errors),
         )
-
