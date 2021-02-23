@@ -90,7 +90,8 @@ class MeanModel(object):
     def copy(self) -> "MeanModel":
         """
         Copy self to a new version of the model. Required should
-        you wish to re-use a version of this later on.
+        you wish to re-use a version of this object later on, as
+        otherwise the ``model`` parameter will be mutated.
         """
 
         return deepcopy(self)
