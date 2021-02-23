@@ -73,11 +73,11 @@ generator = se.EmulatorGenerator(
 
 gpe_no_linear = generator.create_gaussian_process_emulator(model_values=model_values)
 gpe_no_linear.build_arrays()
-gpe_no_linear.fit_model(fit_linear_model=False)
+gpe_no_linear.fit_model(mean_model=None)
 
 gpe_with_linear = generator.create_gaussian_process_emulator(model_values=model_values)
 gpe_with_linear.build_arrays()
-gpe_with_linear.fit_model(fit_linear_model=True)
+gpe_with_linear.fit_model(mean_model=se.mean_models.LinearMeanModel())
 
 lass = generator.create_linear_model_emulator(model_values=model_values)
 lass.build_arrays()
