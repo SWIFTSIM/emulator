@@ -134,4 +134,3 @@ for unique_identifier in emulators.keys():
     plt.title(f"Leave Out Run {unique_identifier}")
 
     plt.savefig(f"leave_one_out_figures/leave_out_{unique_identifier}.png", dpi=300)
-

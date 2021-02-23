@@ -25,8 +25,14 @@ def test_basic_emulator_generator():
     )
 
     my_model_parameters = {
-        0: {"x": 1, "y": 1,},
-        1: {"x": 2, "y": 1,},
+        0: {
+            "x": 1,
+            "y": 1,
+        },
+        1: {
+            "x": 2,
+            "y": 1,
+        },
         2: {"x": 3, "y": 1},
     }
 
@@ -43,7 +49,10 @@ def test_basic_emulator_generator():
             "dependent": np.random.rand(10),
             "dependent_error": np.random.rand(10),
         },
-        2: {"independent": np.arange(9), "dependent": np.random.rand(9),},
+        2: {
+            "independent": np.arange(9),
+            "dependent": np.random.rand(9),
+        },
     }
 
     model_values = ModelValues(model_values=input_model_values)

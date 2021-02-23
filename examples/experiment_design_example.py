@@ -40,13 +40,20 @@ spec = ModelSpecification(
         "$\\log_{10}$ $n_{\\rm H, 0}$",
         "$n_{n}$",
     ],
-    parameter_limits=[[0.0, 1.0], [1.0, 7.0], [-0.5, 5.0], [-1.0, 1.5], [-0.5, 5.0],],
+    parameter_limits=[
+        [0.0, 1.0],
+        [1.0, 7.0],
+        [-0.5, 5.0],
+        [-1.0, 1.5],
+        [-0.5, 5.0],
+    ],
 )
 
 parameter_transforms = {"SNII_energy_fraction_n_0_H_p_cm3": lambda x: 10.0 ** x}
 
 model_parameters = latin.create_hypercube(
-    model_specification=spec, number_of_samples=number_of_simulations,
+    model_specification=spec,
+    number_of_samples=number_of_simulations,
 )
 
 model_parameters.plot_model(

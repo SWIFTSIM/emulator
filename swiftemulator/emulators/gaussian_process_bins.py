@@ -141,7 +141,9 @@ class GaussianProcessEmulatorBins(object):
         return
 
     def fit_model(
-        self, kernel=None, mean_model: Optional[MeanModel] = None,
+        self,
+        kernel=None,
+        mean_model: Optional[MeanModel] = None,
     ):
         """
         Fits the GPE model to each bin separately.
@@ -192,11 +194,14 @@ class GaussianProcessEmulatorBins(object):
                     fit_mean=False,
                 )
             else:
-                gaussian_process = george.GP(copy.deepcopy(kernel),)
+                gaussian_process = george.GP(
+                    copy.deepcopy(kernel),
+                )
 
             # TODO: Figure out how to include non-symmetric errors.
             gaussian_process.compute(
-                x=independent_variables, yerr=dependent_variable_errors,
+                x=independent_variables,
+                yerr=dependent_variable_errors,
             )
 
             def negative_log_likelihood(p):
@@ -269,7 +274,10 @@ class GaussianProcessEmulatorBins(object):
             model_parameter_array_sample, 1.02 * model_parameter_array
         ).reshape(3, len(model_parameter_array))
 
-        model_iterator = zip(self.bin_gaussian_process, self.bin_model_values,)
+        model_iterator = zip(
+            self.bin_gaussian_process,
+            self.bin_model_values,
+        )
 
         dependent_predictions = []
         dependent_prediction_errors = []

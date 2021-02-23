@@ -24,7 +24,10 @@ def test_basic_model_values():
             "dependent": np.random.rand(10),
             "dependent_error": np.random.rand(20).reshape(10, 2),
         },
-        2: {"independent": np.arange(10), "dependent": np.random.rand(10),},
+        2: {
+            "independent": np.arange(10),
+            "dependent": np.random.rand(10),
+        },
     }
 
     output_model = ModelValues(model_values=input_model_values)
@@ -49,7 +52,10 @@ def test_basic_model_values_raise():
             "dependent": np.random.rand(10),
             "dependent_error": np.random.rand(18).reshape(9, 2),
         },
-        2: {"independent": np.arange(10), "dependent": np.random.rand(10),},
+        2: {
+            "independent": np.arange(10),
+            "dependent": np.random.rand(10),
+        },
     }
 
     with pytest.raises(AttributeError):

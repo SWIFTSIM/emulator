@@ -117,7 +117,9 @@ class GaussianProcessEmulator(object):
         self.dependent_variable_errors = dependent_variable_errors
 
     def fit_model(
-        self, kernel=None, mean_model: Optional[MeanModel] = None,
+        self,
+        kernel=None,
+        mean_model: Optional[MeanModel] = None,
     ):
         """
         Fits the GPE model.
@@ -161,11 +163,14 @@ class GaussianProcessEmulator(object):
                 fit_mean=False,
             )
         else:
-            gaussian_process = george.GP(copy.deepcopy(kernel),)
+            gaussian_process = george.GP(
+                copy.deepcopy(kernel),
+            )
 
         # TODO: Figure out how to include non-symmetric errors.
         gaussian_process.compute(
-            x=self.independent_variables, yerr=self.dependent_variable_errors,
+            x=self.independent_variables,
+            yerr=self.dependent_variable_errors,
         )
 
         def negative_log_likelihood(p):

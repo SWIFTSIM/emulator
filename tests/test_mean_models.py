@@ -14,7 +14,9 @@ def test_offset_mean_model():
 
     mean_model.train(independent=np.random.rand(100, 23), dependent=np.arange(100))
 
-    predicted = mean_model.predict(independent=np.random.rand(12, 23),)
+    predicted = mean_model.predict(
+        independent=np.random.rand(12, 23),
+    )
 
     assert (predicted == 49.5).all()
 
@@ -24,7 +26,9 @@ def test_linear_mean_model():
 
     mean_model.train(independent=np.random.rand(100, 10), dependent=np.arange(100))
 
-    mean_model.predict(independent=np.random.rand(12, 10),)
+    mean_model.predict(
+        independent=np.random.rand(12, 10),
+    )
 
     george_model = mean_model.george_model
 
@@ -36,7 +40,9 @@ def test_polynomial_mean_model():
 
     mean_model.train(independent=np.random.rand(100, 10), dependent=np.arange(100))
 
-    mean_model.predict(independent=np.random.rand(12, 10),)
+    mean_model.predict(
+        independent=np.random.rand(12, 10),
+    )
 
     george_model = mean_model.george_model
 

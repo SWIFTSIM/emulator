@@ -21,11 +21,13 @@ from SALib.analyze import rbd_fast
 
 
 def binwise_sensitivity(
-    specification: ModelSpecification, parameters: ModelParameters, values: ModelValues,
+    specification: ModelSpecification,
+    parameters: ModelParameters,
+    values: ModelValues,
 ) -> Dict[str, np.array]:
     """
     Creates a binwise sensitivity analysis dictionary.
-    
+
     For each bin in dependent variable a hash is created; these
     are the keys in the returned dictionary.
 
@@ -43,7 +45,7 @@ def binwise_sensitivity(
     values: ModelValues
         Dependent variables in the sensitivity analysis.
 
-    
+
     Returns
     -------
 
@@ -91,7 +93,9 @@ def binwise_sensitivity(
     sensitivities = {
         k: np.array(
             rbd_fast.analyze(
-                problem=specification.salib_problem, X=independent[k], Y=dependent[k],
+                problem=specification.salib_problem,
+                X=independent[k],
+                Y=dependent[k],
             )["S1"]
         )
         for k in independent.keys()

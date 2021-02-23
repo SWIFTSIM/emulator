@@ -32,8 +32,14 @@ def test_basic_binwise_sens():
     )
 
     my_model_parameters = {
-        0: {"x": 1, "y": 1,},
-        1: {"x": 2, "y": 1,},
+        0: {
+            "x": 1,
+            "y": 1,
+        },
+        1: {
+            "x": 2,
+            "y": 1,
+        },
         2: {"x": 3, "y": 1},
     }
 
@@ -50,13 +56,18 @@ def test_basic_binwise_sens():
             "dependent": np.random.rand(10),
             "dependent_error": np.random.rand(10),
         },
-        2: {"independent": np.arange(10), "dependent": np.random.rand(10),},
+        2: {
+            "independent": np.arange(10),
+            "dependent": np.random.rand(10),
+        },
     }
 
     model_values = ModelValues(model_values=input_model_values)
 
     binwise = binwise_sensitivity(
-        specification=model_spec, parameters=model_parameters, values=model_values,
+        specification=model_spec,
+        parameters=model_parameters,
+        values=model_values,
     )
 
     fig, ax = plot_binwise_sensitivity(specification=model_spec, sensitivities=binwise)

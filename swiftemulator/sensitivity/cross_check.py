@@ -105,7 +105,8 @@ class CrossCheck(object):
 
             emulator.build_arrays()
             emulator.fit_model(
-                kernel=kernel, mean_model=mean_model,
+                kernel=kernel,
+                mean_model=mean_model,
             )
 
             emulators[unique_identifier] = emulator

@@ -111,7 +111,10 @@ plt.fill_between(example_independent, y_l + yerr_l, y_l - yerr_l, alpha=0.5, col
 plt.plot(example_independent, y, label="Predicted (No Linear)", color="C0")
 plt.plot(example_independent, y_l, label="Predicted (With Linear)", color="C1")
 plt.plot(
-    example_independent, y_l_only, label="Predicted (Only LM)", color="C2",
+    example_independent,
+    y_l_only,
+    label="Predicted (Only LM)",
+    color="C2",
 )
 
 plt.plot(

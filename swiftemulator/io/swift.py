@@ -64,9 +64,9 @@ def load_pipeline_outputs(
 
     unit_dict, Dict[str, Dict[str, Union[str, bool]]]
         Dictionary of symbolic units for each scaling relation. Has the
-        structure: ``{scaling_relation: {independent: "Msun", dependent: 
+        structure: ``{scaling_relation: {independent: "Msun", dependent:
         "kpc", log_independent: True, log_dependent: True}}``.
-    
+
     """
 
     model_values = {scaling_relation: {} for scaling_relation in scaling_relations}
@@ -178,14 +178,14 @@ def load_parameter_files(
         that the first parameter would vary between 0.0 and 1.0, with
         the second parameter varying between 8.3 and 9.3. If not provided,
         these will be inferred from the data.
-    
+
     Returns
     -------
 
     model_specification, ModelSpecification
         Specification for the model based on the parameters that
         have been passed to this function.
-    
+
     model_parameters, ModelParameters
         Model parameter container corresponding to the SWIFT
         parameter files.
@@ -247,7 +247,7 @@ def write_parameter_files(
     base_parameter_file: Optional[Path] = None,
 ):
     """
-    Writes parameter files, containing the parameters from a 
+    Writes parameter files, containing the parameters from a
     :class:`ModelParameters` instance, based on a base parameter
     file.
 
@@ -313,4 +313,3 @@ def write_parameter_files(
             yaml.dump(parameters, handle, default_flow_style=False)
 
     return
-
