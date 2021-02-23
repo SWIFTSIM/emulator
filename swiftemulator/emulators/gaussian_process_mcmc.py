@@ -9,15 +9,13 @@ import george
 import corner
 import emcee
 import matplotlib.pyplot as plt
-import sklearn.linear_model as lm
 
 from typing import Hashable, List, Optional, Dict
 
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import Pipeline
+from swiftemulator.mean_models import MeanModel
 
 from scipy.optimize import minimize
 
@@ -78,11 +76,9 @@ class GaussianProcessEmulatorMCMC(object):
             (number_of_independents, number_of_model_parameters + 1), dtype=np.float32
         )
 
-        dependent_variables = np.empty(
-            (number_of_independents), dtype=np.float32)
+        dependent_variables = np.empty((number_of_independents), dtype=np.float32)
 
-        dependent_variable_errors = np.empty(
-            (number_of_independents), dtype=np.float32)
+        dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
 
         self.parameter_order = self.model_specification.parameter_names
         self.ordering = []
@@ -129,10 +125,7 @@ class GaussianProcessEmulatorMCMC(object):
     def fit_model(
         self,
         kernel=None,
-        fit_linear_model: bool = False,
-        lasso_model_alpha: float = 0.0,
-        fit_polynomial_surface_model: bool = False,
-        polynomial_degree: int = 1,
+        mean_model: Optional[MeanModel] = None,
         burn_in_steps: int = 200,
         MCMCsteps: int = 400,
         nwalkers: int = 20,
@@ -148,22 +141,10 @@ class GaussianProcessEmulatorMCMC(object):
             of this instance. By default, this is the
             ``ExpSquaredKernel`` in George
 
-        fit_linear_model, bool
-            Also fit a linear model for the mean to the data before using the
-            Gaussian Process on it?
-
-        lasso_model_alpha, float
-            Alpha for the Lasso model (only used of course when asking to
-            ``fit_linear_model``). If this is 0.0 (the default) basic linear
-            regression is used.
-
-        fit_polynomial_surface_model, bool
-            Fit a polynomial surface to the data before using a Gaussian
-            process on it?
-
-        polynomial_degree, int
-            Maximal degree of the polynomail surface, default 1; linear for each
-            parameter
+        mean_model, MeanModel, optional
+            A mean model conforming to the ``swiftemulator`` mean model
+            protocol (several pre-made models are available in the
+            :mod:`swiftemulator.mean_models` module)
 
         burn_in_steps, int
             Optional: Number of steps used for the burn-in part of the MCMC chain.
@@ -190,41 +171,20 @@ class GaussianProcessEmulatorMCMC(object):
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
             )
 
-        if fit_linear_model:
-            if lasso_model_alpha == 0.0:
-                linear_model = lm.LinearRegression(fit_intercept=True)
-            else:
-                linear_model = lm.Lasso(alpha=lasso_model_alpha)
-
-            # Conform the model to the modelling protocol
-            linear_model.fit(self.independent_variables,
-                             self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(
-                function=linear_model.predict)
-
-            gaussian_process = george.GP(
-                copy.copy(kernel), fit_kernel=True, mean=linear_mean, fit_mean=False,
-            )
-        elif fit_polynomial_surface_model:
-            polynomial_model = Pipeline(
-                [
-                    ("poly", PolynomialFeatures(degree=polynomial_degree)),
-                    ("linear", lm.LinearRegression(fit_intercept=True)),
-                ]
-            )
-
-            # Conform the model to the modelling protocol
-            polynomial_model.fit(self.independent_variables,
-                                 self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(
-                function=polynomial_model.predict
+        if mean_model is not None:
+            mean_model.train(
+                independent=self.independent_variables,
+                dependent=self.dependent_variables,
             )
 
             gaussian_process = george.GP(
-                copy.copy(kernel), fit_kernel=True, mean=linear_mean, fit_mean=False,
+                copy.deepcopy(kernel),
+                fit_kernel=True,
+                mean=mean_model.george_model,
+                fit_mean=False,
             )
         else:
-            gaussian_process = george.GP(copy.copy(kernel))
+            gaussian_process = george.GP(copy.deepcopy(kernel),)
 
         # TODO: Figure out how to include non-symmetric errors.
         gaussian_process.compute(
