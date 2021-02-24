@@ -8,9 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import george
 import copy
-import sklearn.linear_model as lm
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import Pipeline
+
 from tqdm import tqdm
 from pathlib import Path
 
@@ -21,6 +19,8 @@ from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.emulators.gaussian_process import GaussianProcessEmulator
 from swiftemulator.emulators.gaussian_process_mcmc import GaussianProcessEmulatorMCMC
 from swiftemulator.emulators.linear_model import LinearModelEmulator
+
+from swiftemulator.mean_models import MeanModel
 
 
 from typing import List, Dict, Tuple, Union, Optional, Hashable
@@ -61,9 +61,7 @@ class CrossCheck(object):
     def build_emulators(
         self,
         kernel=None,
-        fit_model: str = "none",
-        lasso_model_alpha: float = 0.0,
-        polynomial_degree: int = 1,
+        mean_model: Optional[MeanModel] = None,
         hide_progress: bool = True,
     ):
         """
@@ -80,25 +78,14 @@ class CrossCheck(object):
             of this instance. By default, this is the
             ``ExpSquaredKernel`` in George
 
-        fit_model, str
-            Type of model to use for mean fitting, Optional, defaults
-            to none which is a pure GP modelling. Options: "linear" and
-            "polynomial"
-
-        lasso_model_alpha, float
-            Alpha for the Lasso model (only used of course when asking to
-            ``fit_linear_model``). If this is 0.0 (the default) basic linear
-            regression is used.
-
-        polynomial_degree, int
-            Maximal degree of the polynomial surface, default 1; linear for each
-            parameter
+        mean_model, MeanModel, optional
+            A mean model conforming to the ``swiftemulator`` mean model
+            protocol (several pre-made models are available in the
+            :mod:`swiftemulator.mean_models` module).
 
         hide_progress: bool
             Option to display a tqdm bar when creating the emulators,
             Default is hide progress bar
-
-
         """
 
         model_values = self.model_values
@@ -118,10 +105,7 @@ class CrossCheck(object):
 
             emulator.build_arrays()
             emulator.fit_model(
-                kernel=kernel,
-                fit_model=fit_model,
-                lasso_model_alpha=lasso_model_alpha,
-                polynomial_degree=polynomial_degree,
+                kernel=kernel, mean_model=mean_model,
             )
 
             emulators[unique_identifier] = emulator

@@ -6,15 +6,13 @@ import attr
 import copy
 import numpy as np
 import george
-import sklearn.linear_model as lm
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import Pipeline
 
 from typing import Hashable, List, Optional, Dict
 
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
+from swiftemulator.mean_models import MeanModel
 
 from scipy.optimize import minimize
 
@@ -119,11 +117,7 @@ class GaussianProcessEmulator(object):
         self.dependent_variable_errors = dependent_variable_errors
 
     def fit_model(
-        self,
-        kernel=None,
-        fit_model: str = "none",
-        lasso_model_alpha: float = 0.0,
-        polynomial_degree: int = 1,
+        self, kernel=None, mean_model: Optional[MeanModel] = None,
     ):
         """
         Fits the GPE model.
@@ -136,19 +130,10 @@ class GaussianProcessEmulator(object):
             of this instance. By default, this is the
             ``ExpSquaredKernel`` in George
 
-        fit_model, str
-            Type of model to use for mean fitting, Optional, defaults
-            to none which is a pure GP modelling. Options: "linear" and
-            "polynomial"
-
-        lasso_model_alpha, float
-            Alpha for the Lasso model (only used of course when asking to
-            ``fit_linear_model``). If this is 0.0 (the default) basic linear
-            regression is used.
-
-        polynomial_degree, int
-            Maximal degree of the polynomial surface, default 1; linear for each
-            parameter
+        mean_model, MeanModel, optional
+            A mean model conforming to the ``swiftemulator`` mean model
+            protocol (several pre-made models are available in the
+            :mod:`swiftemulator.mean_models` module).
         """
 
         if self.independent_variables is None:
@@ -163,55 +148,24 @@ class GaussianProcessEmulator(object):
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
             )
 
-        if fit_model == "linear":
-            if lasso_model_alpha == 0.0:
-                linear_model = lm.LinearRegression(fit_intercept=True)
-            else:
-                linear_model = lm.Lasso(alpha=lasso_model_alpha)
-
-            # Conform the model to the modelling protocol
-            linear_model.fit(self.independent_variables, self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(function=linear_model.predict)
-
-            gaussian_process = george.GP(
-                copy.copy(kernel),
-                fit_kernel=True,
-                mean=linear_mean,
-                fit_mean=False,
-            )
-        elif fit_model == "polynomial":
-            polynomial_model = Pipeline(
-                [
-                    ("poly", PolynomialFeatures(degree=polynomial_degree)),
-                    ("linear", lm.LinearRegression(fit_intercept=True)),
-                ]
-            )
-
-            # Conform the model to the modelling protocol
-            polynomial_model.fit(self.independent_variables, self.dependent_variables)
-            linear_mean = george.modeling.CallableModel(
-                function=polynomial_model.predict
+        if mean_model is not None:
+            mean_model.train(
+                independent=self.independent_variables,
+                dependent=self.dependent_variables,
             )
 
             gaussian_process = george.GP(
-                copy.copy(kernel),
+                copy.deepcopy(kernel),
                 fit_kernel=True,
-                mean=linear_mean,
+                mean=mean_model.george_model,
                 fit_mean=False,
             )
         else:
-            if fit_model != "none":
-                if self.emulator is None:
-                    raise ValueError(
-                        "Your choice of fit_model is currently not supported."
-                    )
-
-            gaussian_process = george.GP(copy.copy(kernel))
+            gaussian_process = george.GP(copy.deepcopy(kernel),)
 
         # TODO: Figure out how to include non-symmetric errors.
         gaussian_process.compute(
-            x=self.independent_variables,
-            yerr=self.dependent_variable_errors,
+            x=self.independent_variables, yerr=self.dependent_variable_errors,
         )
 
         def negative_log_likelihood(p):

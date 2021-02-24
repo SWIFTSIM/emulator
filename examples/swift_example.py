@@ -9,6 +9,7 @@ Requires the data available at:
 
 from swiftemulator.io.swift import load_parameter_files, load_pipeline_outputs
 from swiftemulator.emulators.gaussian_process import GaussianProcessEmulator
+from swiftemulator.mean_models import LinearMeanModel
 from glob import glob
 from pathlib import Path
 from tqdm import tqdm
@@ -86,7 +87,7 @@ for unique_identifier in tqdm(leave_out_order):
     scaling_relation.model_values[unique_identifier] = left_out_data
 
 
-train_model = lambda x: x.fit_model(fit_linear_model=True)
+train_model = lambda x: x.fit_model(mean_model=LinearMeanModel())
 
 list(map(train_model, [emulators["9"]]))
 
