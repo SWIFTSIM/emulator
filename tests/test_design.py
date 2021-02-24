@@ -10,7 +10,7 @@ from swiftemulator.design.latin import create_hypercube
 def test_create_hypercube():
     """
     Creates a hypercube and tests that values fall within the correct limits.
-    
+
     Statistics testing of the hypercube is left to the individual user.
     """
 
@@ -20,7 +20,10 @@ def test_create_hypercube():
         parameter_limits=[[-2.0, -1.0], [0.0, 1.0], [0.2, 0.3], [-1023.0, 1048.0]],
     )
 
-    hypercube = create_hypercube(model_specification=model_spec, number_of_samples=120,)
+    hypercube = create_hypercube(
+        model_specification=model_spec,
+        number_of_samples=120,
+    )
 
     for model in hypercube.model_parameters.values():
         for parameter, limits in zip(

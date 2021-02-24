@@ -35,4 +35,3 @@ def test_failure():
         )
 
     return
-

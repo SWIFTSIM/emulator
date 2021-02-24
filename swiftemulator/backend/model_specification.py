@@ -22,7 +22,7 @@ class ModelSpecification(object):
         Total number of variable parameters in your model.
 
     parameter_names, List[str]
-        The names of parameters in your model; these will be 
+        The names of parameters in your model; these will be
         used to access the parameters in :class:``ModelParameters``.
 
     parameter_limits, List[List[float]]

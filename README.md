@@ -14,8 +14,7 @@ Authors:
 Requirements
 ------------
 
-+ `george`
-+ `SALib`
-+ `attrs`
-+ `numpy`
-+ `unyt`
+The package requires a number of numerical and experimental design packages.
+These have been tested (and are continuously tested) using GitHub actions CI
+to use the latest versions available on PyPI. See `requirements.txt` for
+details.

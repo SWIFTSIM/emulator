@@ -22,7 +22,7 @@ class MeanModel(object):
 
         By convention, if there is an underlying model object,
         this should be stored in ``self.model``.
-        
+
         Parameters
         ----------
 
@@ -55,7 +55,7 @@ class MeanModel(object):
             Independent variables to predict dependent variables from,
             in the same format as is passed to ``george``.
 
-        
+
         Returns
         -------
 
@@ -71,7 +71,7 @@ class MeanModel(object):
             If not implemented
 
         AttributeError
-            If the ``model`` is not trained. 
+            If the ``model`` is not trained.
 
         """
 
