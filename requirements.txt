@@ -11,3 +11,4 @@ black
 pyyaml
 pyDOE
 tqdm
+velociraptor
