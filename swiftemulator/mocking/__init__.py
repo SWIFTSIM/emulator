@@ -9,7 +9,7 @@ import numpy as np
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
 from swiftemulator.backend.model_parameters import ModelParameters
-from swiftemulator.design.latin import create_hypercube
+from swiftemulator.design.random import create_cube
 
 from typing import Dict, Any, Tuple, Optional
 
@@ -21,7 +21,7 @@ def mock_hypercube(
     predict_values_kwargs: Optional[Dict[str, Any]] = None,
 ) -> Tuple[ModelValues, ModelParameters]:
     """
-    Create a mocked version of the hypercube, interpolated at random
+    Create a mocked version of the cube, interpolated at random
     points using the emulator.
 
     Parameters
@@ -31,7 +31,7 @@ def mock_hypercube(
         An emulator object that provides a `predict_values` function.
 
     model_spec: ModelSpecification
-        A model specification for your chosen model. The hypercube
+        A model specification for your chosen model. The cube
         will be generated for points within the ranges specified here.
 
     samples: int
@@ -46,10 +46,10 @@ def mock_hypercube(
 
     values: ModelValues
         Model values container with the predictions from the provided emulator
-        within a new hypercube.
+        within a new cube.
 
     parameters: ModelParameters
-        New model parameters generated in a latin hypercube, corresponding to
+        New model parameters generated in a random cube, corresponding to
         the unique identifiers in ``values``.
 
     Notes
@@ -65,10 +65,9 @@ def mock_hypercube(
         {} if predict_values_kwargs is None else predict_values_kwargs
     )
 
-    parameters = create_hypercube(
+    parameters = create_cube(
         model_specification=model_specification,
-        number_of_samples=samples,
-        correlation_retries=16,
+        number_of_samples=number_of_samples,
         prefix_unique_id="emulated_",
     )
 
