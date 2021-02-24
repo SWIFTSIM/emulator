@@ -4,5 +4,6 @@ swiftemulator.egg-info/*
 env/*
 
 examples/emulator_output*/*
+examples/observational_data*
 
 *.png
