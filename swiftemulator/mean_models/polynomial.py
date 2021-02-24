@@ -26,12 +26,12 @@ class PolynomialMeanModel(MeanModel):
     Parameters
     ----------
 
-    polynomial_degree: int, optional
+    degree: int, optional
         Maximal degree of the polynomial surface, default 1 (linear
         in each parameter).
     """
 
-    polynomial_degree: int = attr.ib(default=1)
+    degree: int = attr.ib(default=1)
 
     model: Optional[Union[lm.LinearRegression, lm.Lasso]] = None
 
@@ -42,7 +42,7 @@ class PolynomialMeanModel(MeanModel):
 
         self.model = Pipeline(
             [
-                ("poly", PolynomialFeatures(degree=self.polynomial_degree)),
+                ("poly", PolynomialFeatures(degree=self.degree)),
                 ("linear", lm.LinearRegression(fit_intercept=True)),
             ]
         )
