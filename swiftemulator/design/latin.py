@@ -19,6 +19,7 @@ def create_hypercube(
     model_specification: ModelSpecification,
     number_of_samples: int,
     correlation_retries: Optional[int] = 32,
+    prefix_unique_id: Optional[str] = None,
 ) -> ModelParameters:
     """
     Creates a Latin Hypercube model design.
@@ -39,6 +40,10 @@ def create_hypercube(
         minimize the correlation coefficient even further.
         Default: 32.
 
+    prefix_unique_id: str, optional
+        An optional prefix for the newly generated unique IDs.
+        Defaults to no prefix.
+
 
     Returns
     -------
@@ -51,8 +56,8 @@ def create_hypercube(
     Notes
     -----
 
-    Uses :mod:``pyDOE``'s :func:`lhs` function, with the ``correlation``
-    method, hence minimising the maximum correlation coefficient.
+    Uses :mod:``pyDOE``'s :func:`lhs` function, with the ``maximin``
+    method.
     """
 
     samples = None
@@ -64,23 +69,23 @@ def create_hypercube(
             new_samples = lhs(
                 n=model_specification.number_of_parameters,
                 samples=number_of_samples,
-                criterion="corr",
-                iterations=4096,
+                criterion="maximin",
             )
 
         R = np.corrcoef(new_samples)
         min_corr = np.max(np.abs(R - np.eye(R.shape[0])))
 
-        if min_corr < corr:
+        if min_corr <= corr:
             samples = new_samples
             corr = min_corr
 
     # Transform the samples to the output space.
 
     transform = lambda i, l: float((i * (l[1] - l[0])) + l[0])
+    prefix = prefix_unique_id if prefix_unique_id is not None else ""
 
     model_parameters = {
-        key: {
+        f"{prefix}{key}": {
             par: transform(samples[key][i], model_specification.parameter_limits[i])
             for i, par in enumerate(model_specification.parameter_names)
         }
