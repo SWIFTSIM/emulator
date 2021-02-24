@@ -67,7 +67,7 @@ def mock_hypercube(
 
     parameters = create_cube(
         model_specification=model_specification,
-        number_of_samples=number_of_samples,
+        number_of_samples=samples,
         prefix_unique_id="emulated_",
     )
 
