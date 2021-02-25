@@ -17,6 +17,7 @@ from swiftemulator.mean_models import LinearMeanModel
 from swiftemulator.mocking import mock_hypercube
 from velociraptor.observations import load_observations
 from swiftemulator.comparison import continuous_model_offset_from_observation
+from swiftemulator.comparison.visualisation import visualise_offsets
 
 from glob import glob
 from pathlib import Path
@@ -79,6 +80,32 @@ values, units = load_pipeline_outputs(
 scaling_relation = values["stellar_mass_function_100"]
 scaling_relation_units = units["stellar_mass_function_100"]
 
+
+# We can now compare our real simulation to observational data!
+observation = load_observations(
+    "./observational_data/data/GalaxyStellarMassFunction/Vernon.hdf5"
+)[0]
+
+offsets = continuous_model_offset_from_observation(
+    model_values=scaling_relation,
+    observation=observation,
+    unit_dict=scaling_relation_units,
+    model_difference_range=[9.0, 11.0],
+)
+
+# Need to format the data for `corner` now.
+
+fig, axes = visualise_offsets(
+    model_specification=spec,
+    model_values=scaling_relation,
+    model_parameters=parameters,
+    offsets=offsets,
+)
+
+fig.tight_layout(h_pad=0.05, w_pad=0.05)
+fig.savefig("real_simulation_corner_test.png")
+
+
 emulator = GaussianProcessEmulator(
     model_specification=spec,
     model_parameters=parameters,
@@ -93,7 +120,7 @@ emulator.fit_model(mean_model=LinearMeanModel())
 # see which regions provide good results.
 
 mock_values, mock_parameters = mock_hypercube(
-    emulator=emulator, model_specification=spec, samples=8192
+    emulator=emulator, model_specification=spec, samples=512
 )
 
 # We can now compare our mocked simulation to observational data!
@@ -110,30 +137,68 @@ offsets = continuous_model_offset_from_observation(
 
 # Need to format the data for `corner` now.
 
-corner_data = np.empty(
-    (len(mock_parameters.model_parameters), spec.number_of_parameters),
-    dtype=np.float32,
-)
-corner_weights = np.empty(len(mock_parameters.model_parameters), dtype=np.float32)
-
-for index, (uid, model) in enumerate(mock_parameters.mock_parameters.items()):
-    corner_data[index] = np.array(
-        [model[parameter] for parameter in spec.parameter_names],
-        dtype=np.float32,
-    )
-
-    corner_weights[index] = offsets[uid]
-
-# Normalize and invert the corner weights, as we want to show 'better' models
-# as 'brighter'
-corner_weights = 1.0 - Normalize()(corner_weights)
-
-corner.corner(
-    xs=corner_data,
-    bins=64,
-    range=spec.parameter_limits,
-    weights=corner_weights,
-    labels=spec.parameter_printable_names,
+fig, axes = visualise_offsets(
+    model_specification=spec,
+    model_values=mock_values,
+    model_parameters=mock_parameters,
+    offsets=offsets,
 )
 
-plt.savefig("corner_test.png")
+fig.tight_layout(h_pad=0.05, w_pad=0.05)
+fig.savefig("mocked_simulation_corner_test.png")
+
+# Finally, let's make a plot showing the 'best' model
+# according to our metric!
+
+best_key, best_value = min(offsets.items(), key=lambda x: x[1])
+best_sim = mock_values.model_values[best_key]
+best_sim_parameters = mock_parameters.model_parameters[best_key]
+closest_true, _ = parameters.find_closest_model(
+    mock_parameters.model_parameters[best_key]
+)
+closest_true = closest_true[0]
+closest_true_values = scaling_relation.model_values[closest_true]
+
+fig, ax = plt.subplots()
+
+observation.plot_on_axes(ax)
+
+ax.fill_between(
+    10 ** closest_true_values["independent"],
+    10 ** (closest_true_values["dependent"] - closest_true_values["dependent_error"]),
+    10 ** (closest_true_values["dependent"] + closest_true_values["dependent_error"]),
+    color="C1",
+    alpha=0.5,
+    linewidth=0.0,
+)
+ax.plot(
+    10 ** closest_true_values["independent"],
+    10 ** closest_true_values["dependent"],
+    color="C1",
+    label="Closest Real Model",
+)
+
+ax.fill_between(
+    10 ** best_sim["independent"],
+    10 ** (best_sim["dependent"] - best_sim["dependent_error"]),
+    10 ** (best_sim["dependent"] + best_sim["dependent_error"]),
+    color="C2",
+    alpha=0.5,
+    linewidth=0.0,
+)
+ax.plot(
+    10 ** best_sim["independent"],
+    10 ** best_sim["dependent"],
+    color="C2",
+    label="Predicted Best Model",
+)
+
+ax.loglog()
+
+ax.legend()
+ax.set_xlabel("Stellar Mass (100 kpc) [M$_\\odot$]")
+ax.set_ylabel("Stellar Mass Function")
+
+fig.tight_layout()
+print(best_sim_parameters)
+fig.savefig("best_model_comparison.png")
