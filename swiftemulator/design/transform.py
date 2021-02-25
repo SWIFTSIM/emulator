@@ -16,15 +16,15 @@ def transform_to_model_spec(
     prefix_unique_id: Optional[str] = None,
 ) -> ModelParameters:
     """
-    Transforms the input nd array (which is of shape n parameters
-    by n models) to a model parameters object, by re-scaling the
+    Transforms the input nd array (which is of shape n models
+    by n parameters) to a model parameters object, by re-scaling the
     parameters according to the specification.
 
     Parameters
     ----------
 
     input_array: np.ndarray
-        Input array, of shape (number of parameters, number of samples).
+        Input array, of shape (number of samples, number of parameters).
 
     model_specification: ModelSpecification
         Model specification used to rescale the array.

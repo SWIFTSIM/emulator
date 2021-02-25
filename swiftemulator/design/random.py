@@ -51,7 +51,7 @@ def create_cube(
     """
 
     samples = np.random.rand(
-        model_specification.number_of_parameters, number_of_samples
+        number_of_samples, model_specification.number_of_parameters
     )
 
     return transform_to_model_spec(
