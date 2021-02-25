@@ -26,6 +26,8 @@ def test_create_hypercube():
         number_of_samples=120,
     )
 
+    assert len(hypercube.model_parameters) == 120
+
     for model in hypercube.model_parameters.values():
         for parameter, limits in zip(
             model_spec.parameter_names, model_spec.parameter_limits
@@ -54,6 +56,8 @@ def test_create_cube():
         model_specification=model_spec,
         number_of_samples=120,
     )
+
+    assert len(hypercube.model_parameters) == 120
 
     for model in hypercube.model_parameters.values():
         for parameter, limits in zip(
