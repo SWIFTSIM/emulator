@@ -13,7 +13,7 @@ from swiftemulator.emulators.gaussian_process_mcmc import GaussianProcessEmulato
 import numpy as np
 
 
-def test_basic_emulator_generator():
+def test_basic_gpe_with_mcmc():
     """
     Basic emulator generator test.
     """
@@ -57,11 +57,10 @@ def test_basic_emulator_generator():
 
     model_values = ModelValues(model_values=input_model_values)
 
-    gpe = GaussianProcessEmulatorMCMC(
+    gpe = GaussianProcessEmulatorMCMC(mcmc_steps=1, burn_in_steps=1, walkers=10)
+
+    gpe.fit_model(
         model_specification=model_spec,
         model_parameters=model_parameters,
         model_values=model_values,
     )
-
-    gpe.build_arrays()
-    gpe.fit_model(MCMCsteps=1, burn_in_steps=1, nwalkers=10)
