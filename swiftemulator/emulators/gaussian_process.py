@@ -27,7 +27,7 @@ class GaussianProcessEmulator(BaseEmulator):
     Parameters
     ----------
 
-    kernel, george.kernels, optional
+    kernel, george.kernels.Kernel, optional
         The ``george`` kernel to use. The GPE here uses a copy
         of this instance. By default, this is the
         ``ExpSquaredKernel`` in George
@@ -38,7 +38,7 @@ class GaussianProcessEmulator(BaseEmulator):
         :mod:`swiftemulator.mean_models` module).
     """
 
-    kernel = attr.ib(default=None)
+    kernel: Optional[george.kernels.Kernel] = attr.ib(default=None)
     mean_model: Optional[MeanModel] = attr.ib(default=None)
 
     model_specification: Optional[ModelSpecification] = None
