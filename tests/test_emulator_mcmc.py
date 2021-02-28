@@ -3,11 +3,12 @@ Tests the emulator generator in ``swift-emulator/backend/emulator_generator.py``
 """
 
 from swiftemulator.backend.emulator_generator import (
-    EmulatorGenerator,
     ModelParameters,
     ModelSpecification,
     ModelValues,
 )
+
+from swiftemulator.emulators.gaussian_process_mcmc import GaussianProcessEmulatorMCMC
 
 import numpy as np
 
@@ -56,13 +57,11 @@ def test_basic_emulator_generator():
 
     model_values = ModelValues(model_values=input_model_values)
 
-    emulator_generator = EmulatorGenerator(
-        model_specification=model_spec, model_parameters=model_parameters
-    )
-
-    gpe = emulator_generator.create_gaussian_process_emulator_bins(
-        model_values=model_values
+    gpe = GaussianProcessEmulatorMCMC(
+        model_specification=model_spec,
+        model_parameters=model_parameters,
+        model_values=model_values,
     )
 
     gpe.build_arrays()
-    gpe.fit_model()
+    gpe.fit_model(MCMCsteps=1, burn_in_steps=1, nwalkers=10)
