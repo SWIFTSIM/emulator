@@ -57,7 +57,12 @@ def test_basic_emulator_generator():
 
     model_values = ModelValues(model_values=input_model_values)
 
-    gpe = GaussianProcessEmulatorBins(model_spec, model_parameters, model_values)
+    gpe = GaussianProcessEmulatorBins()
 
-    gpe.build_arrays()
-    gpe.fit_model()
+    gpe.fit_model(
+        model_specification=model_spec,
+        model_parameters=model_parameters,
+        model_values=model_values,
+    )
+
+    gpe.predict_values([0, 7], {"x": 1.5, "y": 1.0})

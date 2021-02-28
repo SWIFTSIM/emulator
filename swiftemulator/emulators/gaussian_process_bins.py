@@ -9,6 +9,8 @@ import george
 
 from typing import Hashable, List, Optional, Dict
 
+from swiftemulator.emulators.base import BaseEmulator
+
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
@@ -19,7 +21,7 @@ from scipy.optimize import minimize
 
 
 @attr.s
-class GaussianProcessEmulatorBins(object):
+class GaussianProcessEmulatorBins(BaseEmulator):
     """
     Generator for emulators for individual scaling relations.
     Uses a GP for each seperate bin.
@@ -27,26 +29,23 @@ class GaussianProcessEmulatorBins(object):
     Parameters
     ----------
 
-    model_specification: ModelSpecification
-        Full instance of the model specification.
+    kernel, george.kernels.Kernel, optional
+        The ``george`` kernel to use. The GPE here uses a copy
+        of this instance. By default, this is the
+        ``ExpSquaredKernel`` in George
 
-    model_parameters: ModelParameters
-        Full instance of the model parameters.
-
-    model_values: ModelValues
-        Full instance of the model values describing
-        this individual scaling relation.
+    mean_model, MeanModel, optional
+        A mean model conforming to the ``swiftemulator`` mean model
+        protocol (several pre-made models are available in the
+        :mod:`swiftemulator.mean_models` module).
     """
 
-    model_specification: ModelSpecification = attr.ib(
-        validator=attr.validators.instance_of(ModelSpecification)
-    )
-    model_parameters: ModelParameters = attr.ib(
-        validator=attr.validators.instance_of(ModelParameters)
-    )
-    model_values: ModelValues = attr.ib(
-        validator=attr.validators.instance_of(ModelValues)
-    )
+    kernel: Optional[george.kernels.Kernel] = attr.ib(default=None)
+    mean_model: Optional[MeanModel] = attr.ib(default=None)
+
+    model_specification: Optional[ModelSpecification] = None
+    model_parameters: Optional[ModelParameters] = None
+    model_values: Optional[ModelValues] = None
 
     ordering: Optional[List[Hashable]] = None
     parameter_order: Optional[List[str]] = None
@@ -60,26 +59,46 @@ class GaussianProcessEmulatorBins(object):
     bin_centers: List[float] = None
     bin_gaussian_process: List[george.GP] = None
 
-    def build_arrays(self):
+    def _build_arrays(
+        self,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
+    ):
         """
         Builds the arrays for passing to `george`. As we aim to build
         a emulator for each dependent bin, this creates a dictionary containing
         the dependent, dependent errors and the variables beloning to each bin
         in a format the `george` likes. It also links this to the bin centers,
         which are stored as a separate dictionary.
+
+        Parameters
+        ----------
+
+        model_specification: ModelSpecification
+            Full instance of the model specification.
+
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
+
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
         """
 
-        model_values = self.model_values.model_values
-        model_parameters = self.model_parameters.model_parameters
+        self.model_specification = model_specification
+        self.model_parameters = model_parameters
+        self.model_values = model_values
+
         self.parameter_order = self.model_specification.parameter_names
         number_of_model_parameters = self.model_specification.number_of_parameters
-        unique_identifiers = list(self.model_values.model_values.keys())
+        unique_identifiers = list(model_values.model_values.keys())
 
         bin_centers = np.unique(
             [
                 item
                 for uid in unique_identifiers
-                for item in model_values[uid]["independent"]
+                for item in model_values.model_values[uid]["independent"]
             ]
         )
 
@@ -94,7 +113,7 @@ class GaussianProcessEmulatorBins(object):
             bin_dependent_errors = []
 
             for unique_identifier in unique_identifiers:
-                uniq_model_values = model_values[unique_identifier]
+                uniq_model_values = model_values.model_values[unique_identifier]
                 bin_independent_uniq = uniq_model_values["independent"]
 
                 # Which one of our bins corresponds to the bin of interest?
@@ -111,7 +130,7 @@ class GaussianProcessEmulatorBins(object):
                 bin_independent_uniq = bin_independent_uniq[bin_mask][0]
 
                 bin_variables_uniq = [
-                    model_parameters[unique_identifier][parameter]
+                    model_parameters.model_parameters[unique_identifier][parameter]
                     for parameter in self.parameter_order
                 ]
 
@@ -142,28 +161,42 @@ class GaussianProcessEmulatorBins(object):
 
     def fit_model(
         self,
-        kernel=None,
-        mean_model: Optional[MeanModel] = None,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
     ):
         """
-        Fits the GPE model to each bin separately.
+        Fits the gaussian process model, as determined by the
+        initialiser variables of the class (i.e. the kernel and
+        the mean model).
 
         Parameters
         ----------
 
-        kernel, george.kernels
-            The ``george`` kernel to use. The GPE here uses a copy
-            of this instance. By default, this is the
-            ``ExpSquaredKernel`` in George
+        model_specification: ModelSpecification
+            Full instance of the model specification.
 
-        mean_model, MeanModel, optional
-            A mean model conforming to the ``swiftemulator`` mean model
-            protocol (several pre-made models are available in the
-            :mod:`swiftemulator.mean_models` module).
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
+
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
+
+        Notes
+        -----
+
+        This method uses copies of the internal kernel and mean model
+        objects, as those objects contain slightly unhelpful state information.
         """
 
         if self.bin_model_values is None:
-            self.build_arrays()
+            # Creates independent_variables, dependent_variables.
+            self._build_arrays(
+                model_specification=model_specification,
+                model_parameters=model_parameters,
+                model_values=model_values,
+            )
 
         unique_bin_identifiers = list(range(self.n_bins))
         bin_model_values = self.bin_model_values
@@ -175,27 +208,31 @@ class GaussianProcessEmulatorBins(object):
             dependent_variables = bin_model_values[bin_index]["dependent"]
             dependent_variable_errors = bin_model_values[bin_index]["dependent_errors"]
 
-            number_of_kernel_dimensions = self.model_specification.number_of_parameters
+            if self.kernel is None:
+                number_of_kernel_dimensions = (
+                    self.model_specification.number_of_parameters
+                )
 
-            kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
-                np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
-            )
+                self.kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
+                    np.ones(number_of_kernel_dimensions),
+                    ndim=number_of_kernel_dimensions,
+                )
 
-            if mean_model is not None:
-                mean_model.train(
+            if self.mean_model is not None:
+                self.mean_model.train(
                     independent=independent_variables,
                     dependent=dependent_variables,
                 )
 
                 gaussian_process = george.GP(
-                    copy.deepcopy(kernel),
+                    copy.deepcopy(self.kernel),
                     fit_kernel=True,
-                    mean=mean_model.george_model,
+                    mean=self.mean_model.george_model,
                     fit_mean=False,
                 )
             else:
                 gaussian_process = george.GP(
-                    copy.deepcopy(kernel),
+                    copy.deepcopy(self.kernel),
                 )
 
             # TODO: Figure out how to include non-symmetric errors.
@@ -228,12 +265,20 @@ class GaussianProcessEmulatorBins(object):
 
         return
 
-    def predict_values(self, model_parameters: Dict[str, float]) -> np.array:
+    def predict_values(
+        self, independent: np.array, model_parameters: Dict[str, float]
+    ) -> np.array:
         """
         Predict values from the trained emulator contained within this object.
 
         Parameters
         ----------
+
+        independent, np.array
+            Independent continuous variables to evaluate the emulator
+            at. If the emulator is discrete, these are only allowed to be
+            the discrete independent variables that the emulator was trained at
+            (disregarding the additional 'independent' model parameters, below.)
 
         model_parameters: Dict[str, float]
             The point in model parameter space to create predicted
@@ -242,17 +287,22 @@ class GaussianProcessEmulatorBins(object):
         Returns
         -------
 
-        independent_array, np.array
-            array with the x_values corresponding to the dependent
-            values
-
         dependent_predictions, np.array
             Array of predictions, if the emulator is a function f, these
             are the predicted values of f(independent) evaluted at the position
-            of the input model_parameters.
+            of the input ``model_parameters``.
 
         dependent_prediction_errors, np.array
-            Variance on the model predictions.
+            Errors on the model predictions. For models where the errors are
+            unconstrained, this is an array of zeroes.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction, or when attempting to evaluate the model at
+            disallowed independent variables.
         """
 
         if self.bin_gaussian_process is None:
@@ -260,6 +310,24 @@ class GaussianProcessEmulatorBins(object):
                 "Please train the emulator with fit_model before attempting "
                 "to make predictions."
             )
+
+        # First calculate which indices in bin_centers (and hence
+        # bin_gaussian_processes) correspond to the requested ``independent``
+        # variables.
+
+        array_centers = np.array(self.bin_centers)
+        gpe_ordering = []
+
+        for requested_independent_variable in independent:
+            try:
+                gpe_ordering.append(
+                    np.where(array_centers == requested_independent_variable)[0][0]
+                )
+            except IndexError:
+                raise AttributeError(
+                    f"Requested independent variable {independent} not valid, ",
+                    f"this instance of GPE Bins is only valid at {array_centers}.",
+                )
 
         model_parameter_array = np.array(
             [model_parameters[parameter] for parameter in self.parameter_order]
@@ -274,15 +342,13 @@ class GaussianProcessEmulatorBins(object):
             model_parameter_array_sample, 1.02 * model_parameter_array
         ).reshape(3, len(model_parameter_array))
 
-        model_iterator = zip(
-            self.bin_gaussian_process,
-            self.bin_model_values,
-        )
-
         dependent_predictions = []
         dependent_prediction_errors = []
 
-        for gp, model_values in model_iterator:
+        for emulator_index in gpe_ordering:
+            gp = self.bin_gaussian_process[emulator_index]
+            model_values = self.bin_model_values[emulator_index]
+
             model, errors = gp.predict(
                 y=model_values["dependent"],
                 t=model_parameter_array_sample,
@@ -295,7 +361,6 @@ class GaussianProcessEmulatorBins(object):
             dependent_prediction_errors.append(errors[1])
 
         return (
-            self.bin_centers.copy(),
             np.array(dependent_predictions),
             np.array(dependent_prediction_errors),
         )

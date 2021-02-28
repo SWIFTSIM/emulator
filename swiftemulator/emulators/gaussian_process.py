@@ -165,7 +165,6 @@ class GaussianProcessEmulator(BaseEmulator):
 
         This method uses copies of the internal kernel and mean model
         objects, as those objects contain slightly unhelpful state information.
-
         """
 
         if self.independent_variables is None:
