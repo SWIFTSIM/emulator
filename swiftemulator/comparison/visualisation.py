@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def visualise_offsets(
+def visualise_offsets_mean(
     model_specification: ModelSpecification,
     model_values: ModelValues,
     model_parameters: ModelParameters,

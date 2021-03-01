@@ -17,7 +17,7 @@ from swiftemulator.mean_models import LinearMeanModel
 from swiftemulator.mocking import mock_hypercube
 from velociraptor.observations import load_observations
 from swiftemulator.comparison import continuous_model_offset_from_observation
-from swiftemulator.comparison.visualisation import visualise_offsets
+from swiftemulator.comparison.visualisation import visualise_offsets_mean
 
 from glob import glob
 from pathlib import Path
@@ -95,7 +95,7 @@ offsets = continuous_model_offset_from_observation(
 
 # Need to format the data for `corner` now.
 
-fig, axes = visualise_offsets(
+fig, axes = visualise_offsets_mean(
     model_specification=spec,
     model_values=scaling_relation,
     model_parameters=parameters,
@@ -137,7 +137,7 @@ offsets = continuous_model_offset_from_observation(
 
 # Need to format the data for `corner` now.
 
-fig, axes = visualise_offsets(
+fig, axes = visualise_offsets_mean(
     model_specification=spec,
     model_values=mock_values,
     model_parameters=mock_parameters,
