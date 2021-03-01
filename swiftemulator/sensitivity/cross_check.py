@@ -34,35 +34,37 @@ class CrossCheck(object):
     Parameters
     ----------
 
-    model_specification: ModelSpecification
-        Full instance of the model specification.
+    kernel, george.kernels
+        The ``george`` kernel to use. The GPE here uses a copy
+        of this instance. By default, this is the
+        ``ExpSquaredKernel`` in George
 
-    model_parameters: ModelParameters
-        Full instance of the model parameters.
+    mean_model, MeanModel, optional
+        A mean model conforming to the ``swiftemulator`` mean model
+        protocol (several pre-made models are available in the
+        :mod:`swiftemulator.mean_models` module).
 
-    model_values: ModelValues
-        Full instance of the model values describing
-        this individual scaling relation.
+    hide_progress: bool
+        Option to display a tqdm bar when creating the emulators,
+        Default is to hide progress bar.
     """
 
-    model_specification: ModelSpecification = attr.ib(
-        validator=attr.validators.instance_of(ModelSpecification)
-    )
-    model_parameters: ModelParameters = attr.ib(
-        validator=attr.validators.instance_of(ModelParameters)
-    )
-    model_values: ModelValues = attr.ib(
-        validator=attr.validators.instance_of(ModelValues)
-    )
+    kernel: Optional[george.kernels.Kernel] = attr.ib(default=None)
+    mean_model: Optional[MeanModel] = attr.ib(default=None)
+    hide_progress: bool = attr.ib(default=True)
+
+    model_specification: ModelSpecification
+    model_parameters: ModelParameters
+    model_values: ModelValues
 
     leave_out_order: Optional[List[int]] = None
     cross_emulators: Optional[Dict[Hashable, george.GP]] = None
 
     def build_emulators(
         self,
-        kernel=None,
-        mean_model: Optional[MeanModel] = None,
-        hide_progress: bool = True,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
     ):
         """
         Build a dictonary with an emulator for each simulation
@@ -70,43 +72,41 @@ class CrossCheck(object):
 
         Note: this can take a long time
 
+
         Parameters
         ----------
 
-        kernel, george.kernels
-            The ``george`` kernel to use. The GPE here uses a copy
-            of this instance. By default, this is the
-            ``ExpSquaredKernel`` in George
+        model_specification: ModelSpecification
+            Full instance of the model specification.
 
-        mean_model, MeanModel, optional
-            A mean model conforming to the ``swiftemulator`` mean model
-            protocol (several pre-made models are available in the
-            :mod:`swiftemulator.mean_models` module).
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
 
-        hide_progress: bool
-            Option to display a tqdm bar when creating the emulators,
-            Default is hide progress bar
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
         """
 
-        model_values = self.model_values
-        leave_out_order = list(model_values.model_values.keys())
-        self.leave_out_order = leave_out_order
+        self.model_specification = model_specification
+        self.model_parameters = model_parameters
+        self.model_values = model_values
+
+        self.leave_out_order = list(model_values.model_values.keys())
 
         emulators = {}
 
-        for unique_identifier in tqdm(self.leave_out_order, disable=hide_progress):
+        for unique_identifier in tqdm(self.leave_out_order, disable=self.hide_progress):
             left_out_data = model_values.model_values.pop(unique_identifier)
 
             emulator = GaussianProcessEmulator(
-                model_specification=self.model_specification,
-                model_parameters=self.model_parameters,
-                model_values=model_values,
+                kernel=self.kernel,
+                mean_model=self.mean_model,
             )
 
-            emulator.build_arrays()
             emulator.fit_model(
-                kernel=kernel,
-                mean_model=mean_model,
+                model_specification=model_specification,
+                model_parameters=model_parameters,
+                model_values=model_values,
             )
 
             emulators[unique_identifier] = emulator
@@ -232,7 +232,7 @@ class CrossCheck(object):
             y_model = self.model_values.model_values[unique_identifier]["dependent"]
 
             emulated, _ = self.cross_emulators[unique_identifier].predict_values(
-                x_model,
+                independent=x_model,
                 model_parameters=self.model_parameters.model_parameters[
                     unique_identifier
                 ],
