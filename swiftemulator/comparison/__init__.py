@@ -85,6 +85,60 @@ def continuous_difference(
     return integral
 
 
+def continuous_difference_fast(
+    independent_A: np.array,
+    dependent_A: np.array,
+    independent_B: np.array,
+    dependent_B: np.array,
+    difference_range: Optional[List[float]] = None,
+):
+    """
+    Calculate the continuous difference between two datasets A and B.
+    Effectively calculates a true geometric difference overlap
+    between the two (as an L1 norm). This is a faster version of the
+    'definitely' correct ``continuous_difference``.
+
+    independent_A: np.array
+        Independent variables for dataset A
+
+    dependent_A: np.array
+        Dependent variables for dataset A
+
+    independent_B: np.array
+        Independent variables for dataset B
+
+    dependent_B: np.array
+        Dependent variables for dataset B
+
+    difference_range: List[float], optional
+        Range (lower, upper) to calculate the difference overlap
+        between. If not present, the whole range of independent_A
+        is used.
+
+    Returns
+    -------
+
+    difference: float
+        The area difference between the two lines.
+
+    Notes
+    -----
+
+    This function effectively calculates the difference in a
+    linearly interpolated integral between the two lines. At the
+    edges of a domain, we simply use the last available value.
+    """
+
+    difference = 0.0
+
+    sort_A = np.argsort(independent_A)
+    sort_B = np.argsort(independent_B)
+
+    raise NotImplementedError
+
+    return difference
+
+
 def continuous_model_offset_from_observation(
     model_values: ModelValues,
     observation: ObservationalData,
