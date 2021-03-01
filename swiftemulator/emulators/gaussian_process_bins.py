@@ -278,7 +278,8 @@ class GaussianProcessEmulatorBins(BaseEmulator):
             Independent continuous variables to evaluate the emulator
             at. If the emulator is discrete, these are only allowed to be
             the discrete independent variables that the emulator was trained at
-            (disregarding the additional 'independent' model parameters, below.)
+            (disregarding the additional 'independent' model parameters, below).
+            These can be found in this object in the ``bin_centers`` attribute.
 
         model_parameters: Dict[str, float]
             The point in model parameter space to create predicted
