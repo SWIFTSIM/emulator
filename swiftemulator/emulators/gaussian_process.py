@@ -9,6 +9,8 @@ import george
 
 from typing import Hashable, List, Optional, Dict
 
+from swiftemulator.emulators.base import BaseEmulator
+
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
@@ -18,33 +20,30 @@ from scipy.optimize import minimize
 
 
 @attr.s
-class GaussianProcessEmulator(object):
+class GaussianProcessEmulator(BaseEmulator):
     """
     Generator for emulators for individual scaling relations.
 
     Parameters
     ----------
 
-    model_specification: ModelSpecification
-        Full instance of the model specification.
+    kernel, george.kernels.Kernel, optional
+        The ``george`` kernel to use. The GPE here uses a copy
+        of this instance. By default, this is the
+        ``ExpSquaredKernel`` in George
 
-    model_parameters: ModelParameters
-        Full instance of the model parameters.
-
-    model_values: ModelValues
-        Full instance of the model values describing
-        this individual scaling relation.
+    mean_model, MeanModel, optional
+        A mean model conforming to the ``swiftemulator`` mean model
+        protocol (several pre-made models are available in the
+        :mod:`swiftemulator.mean_models` module).
     """
 
-    model_specification: ModelSpecification = attr.ib(
-        validator=attr.validators.instance_of(ModelSpecification)
-    )
-    model_parameters: ModelParameters = attr.ib(
-        validator=attr.validators.instance_of(ModelParameters)
-    )
-    model_values: ModelValues = attr.ib(
-        validator=attr.validators.instance_of(ModelValues)
-    )
+    kernel: Optional[george.kernels.Kernel] = attr.ib(default=None)
+    mean_model: Optional[MeanModel] = attr.ib(default=None)
+
+    model_specification: Optional[ModelSpecification] = None
+    model_parameters: Optional[ModelParameters] = None
+    model_values: Optional[ModelValues] = None
 
     ordering: Optional[List[Hashable]] = None
     parameter_order: Optional[List[str]] = None
@@ -55,16 +54,37 @@ class GaussianProcessEmulator(object):
 
     emulator: Optional[george.GP] = None
 
-    def build_arrays(self):
+    def _build_arrays(
+        self,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
+    ):
         """
         Builds the arrays for passing to `george`.
+
+        Parameters
+        ----------
+
+        model_specification: ModelSpecification
+            Full instance of the model specification.
+
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
+
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
         """
 
-        model_values = self.model_values.model_values
-        unique_identifiers = model_values.keys()
-        number_of_independents = self.model_values.number_of_variables
-        number_of_model_parameters = self.model_specification.number_of_parameters
-        model_parameters = self.model_parameters.model_parameters
+        self.model_specification = model_specification
+        self.model_parameters = model_parameters
+        self.model_values = model_values
+
+        unique_identifiers = model_values.model_values.keys()
+        number_of_independents = model_values.number_of_variables
+        number_of_model_parameters = model_specification.number_of_parameters
+        model_parameters = model_parameters.model_parameters
 
         independent_variables = np.empty(
             (number_of_independents, number_of_model_parameters + 1), dtype=np.float32
@@ -74,7 +94,7 @@ class GaussianProcessEmulator(object):
 
         dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
 
-        self.parameter_order = self.model_specification.parameter_names
+        self.parameter_order = model_specification.parameter_names
         self.ordering = []
         filled_lines = 0
 
@@ -89,7 +109,7 @@ class GaussianProcessEmulator(object):
                 ]
             )
 
-            this_model = model_values[unique_identifier]
+            this_model = model_values.model_values[unique_identifier]
             model_independent = this_model["independent"]
             model_dependent = this_model["dependent"]
             model_error = this_model.get(
@@ -118,53 +138,65 @@ class GaussianProcessEmulator(object):
 
     def fit_model(
         self,
-        kernel=None,
-        mean_model: Optional[MeanModel] = None,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
     ):
         """
-        Fits the GPE model.
+        Fits the gaussian process model, as determined by the
+        initialiser variables of the class (i.e. the kernel and
+        the mean model).
 
         Parameters
         ----------
 
-        kernel, george.kernels
-            The ``george`` kernel to use. The GPE here uses a copy
-            of this instance. By default, this is the
-            ``ExpSquaredKernel`` in George
+        model_specification: ModelSpecification
+            Full instance of the model specification.
 
-        mean_model, MeanModel, optional
-            A mean model conforming to the ``swiftemulator`` mean model
-            protocol (several pre-made models are available in the
-            :mod:`swiftemulator.mean_models` module).
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
+
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
+
+        Notes
+        -----
+
+        This method uses copies of the internal kernel and mean model
+        objects, as those objects contain slightly unhelpful state information.
         """
 
         if self.independent_variables is None:
-            self.build_arrays()
-
-        if kernel is None:
-            number_of_kernel_dimensions = (
-                self.model_specification.number_of_parameters + 1
+            # Creates independent_variables, dependent_variables.
+            self._build_arrays(
+                model_specification=model_specification,
+                model_parameters=model_parameters,
+                model_values=model_values,
             )
 
-            kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
+        if self.kernel is None:
+            number_of_kernel_dimensions = model_specification.number_of_parameters + 1
+
+            self.kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
             )
 
-        if mean_model is not None:
-            mean_model.train(
+        if self.mean_model is not None:
+            self.mean_model.train(
                 independent=self.independent_variables,
                 dependent=self.dependent_variables,
             )
 
             gaussian_process = george.GP(
-                copy.deepcopy(kernel),
+                copy.deepcopy(self.kernel),
                 fit_kernel=True,
-                mean=mean_model.george_model,
+                mean=self.mean_model.george_model,
                 fit_mean=False,
             )
         else:
             gaussian_process = george.GP(
-                copy.deepcopy(kernel),
+                copy.deepcopy(self.kernel),
             )
 
         # TODO: Figure out how to include non-symmetric errors.

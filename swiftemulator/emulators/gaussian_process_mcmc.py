@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 
 from typing import Hashable, List, Optional, Dict
 
+from swiftemulator.emulators.base import BaseEmulator
+
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
@@ -21,33 +23,56 @@ from scipy.optimize import minimize
 
 
 @attr.s
-class GaussianProcessEmulatorMCMC(object):
+class GaussianProcessEmulatorMCMC(BaseEmulator):
     """
     Generator for emulators for individual scaling relations.
 
     Parameters
     ----------
 
-    model_specification: ModelSpecification
-        Full instance of the model specification.
+    kernel, george.kernels.Kernel, optional
+        The ``george`` kernel to use. The GPE here uses a copy
+        of this instance. By default, this is the
+        ``ExpSquaredKernel`` in George
 
-    model_parameters: ModelParameters
-        Full instance of the model parameters.
+    mean_model, MeanModel, optional
+        A mean model conforming to the ``swiftemulator`` mean model
+        protocol (several pre-made models are available in the
+        :mod:`swiftemulator.mean_models` module).
 
-    model_values: ModelValues
-        Full instance of the model values describing
-        this individual scaling relation.
+    burn_in_steps, int, optional
+        Optional: Number of steps used for the burn-in part of the MCMC chain.
+        Defaults to 50 for small intial test.
+
+    mcmc_steps, int, optional
+        Optional: Number of steps used for sampling the likelihood by the MCMC.
+        chain. Defaults to 100 for small initial tests.
+
+    walkers, int, optional
+        Optional: Number of walkers used by the MCMC. Defaults to 40. Should
+        (statistically) be at least 2 times the number of free parameters
+
+
+    use_hyperparameter_error, bool, optional
+        Switch for including errors originating from uncertain
+        hyperparameters in the prediction outputs, (defaults to ``False``).
+
+    samples_for_error, int, optional
+        Number of MCMC samples to use for hyperparameter error estimation
+        if ``use_hyperparameter_error`` is ``True``, defaults to 100.
     """
 
-    model_specification: ModelSpecification = attr.ib(
-        validator=attr.validators.instance_of(ModelSpecification)
-    )
-    model_parameters: ModelParameters = attr.ib(
-        validator=attr.validators.instance_of(ModelParameters)
-    )
-    model_values: ModelValues = attr.ib(
-        validator=attr.validators.instance_of(ModelValues)
-    )
+    kernel: Optional[george.kernels.Kernel] = attr.ib(default=None)
+    mean_model: Optional[MeanModel] = attr.ib(default=None)
+    burn_in_steps: int = attr.ib(default=50)
+    mcmc_steps: int = attr.ib(default=100)
+    walkers: int = attr.ib(default=40)
+    use_hyperparameter_error: bool = attr.ib(default=False)
+    samples_for_error: int = attr.ib(default=100)
+
+    model_specification: Optional[ModelSpecification] = None
+    model_parameters: Optional[ModelParameters] = None
+    model_values: Optional[ModelValues] = None
 
     ordering: Optional[List[Hashable]] = None
     parameter_order: Optional[List[str]] = None
@@ -58,19 +83,37 @@ class GaussianProcessEmulatorMCMC(object):
 
     emulator: Optional[george.GP] = None
 
-    hyperparameter_best_fit: Optional[np.array] = None
-    hyperparameter_samples: Optional[np.array] = None
-
-    def build_arrays(self):
+    def _build_arrays(
+        self,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
+    ):
         """
         Builds the arrays for passing to `george`.
+
+        Parameters
+        ----------
+
+        model_specification: ModelSpecification
+            Full instance of the model specification.
+
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
+
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
         """
 
-        model_values = self.model_values.model_values
-        unique_identifiers = model_values.keys()
-        number_of_independents = self.model_values.number_of_variables
-        number_of_model_parameters = self.model_specification.number_of_parameters
-        model_parameters = self.model_parameters.model_parameters
+        self.model_specification = model_specification
+        self.model_parameters = model_parameters
+        self.model_values = model_values
+
+        unique_identifiers = model_values.model_values.keys()
+        number_of_independents = model_values.number_of_variables
+        number_of_model_parameters = model_specification.number_of_parameters
+        model_parameters = model_parameters.model_parameters
 
         independent_variables = np.empty(
             (number_of_independents, number_of_model_parameters + 1), dtype=np.float32
@@ -80,7 +123,7 @@ class GaussianProcessEmulatorMCMC(object):
 
         dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
 
-        self.parameter_order = self.model_specification.parameter_names
+        self.parameter_order = model_specification.parameter_names
         self.ordering = []
         filled_lines = 0
 
@@ -95,7 +138,7 @@ class GaussianProcessEmulatorMCMC(object):
                 ]
             )
 
-            this_model = model_values[unique_identifier]
+            this_model = model_values.model_values[unique_identifier]
             model_independent = this_model["independent"]
             model_dependent = this_model["dependent"]
             model_error = this_model.get(
@@ -124,68 +167,68 @@ class GaussianProcessEmulatorMCMC(object):
 
     def fit_model(
         self,
-        kernel=None,
-        mean_model: Optional[MeanModel] = None,
-        burn_in_steps: int = 200,
-        MCMCsteps: int = 400,
-        nwalkers: int = 20,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
     ):
         """
-        Fits the GPE model.
+        Fits the gaussian process model, as determined by the
+        initialiser variables of the class (i.e. the kernel and
+        the mean model).
 
         Parameters
         ----------
 
-        kernel, george.kernels
-            The ``george`` kernel to use. The GPE here uses a copy
-            of this instance. By default, this is the
-            ``ExpSquaredKernel`` in George
+        model_specification: ModelSpecification
+            Full instance of the model specification.
 
-        mean_model, MeanModel, optional
-            A mean model conforming to the ``swiftemulator`` mean model
-            protocol (several pre-made models are available in the
-            :mod:`swiftemulator.mean_models` module)
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
 
-        burn_in_steps, int
-            Optional: Number of steps used for the burn-in part of the MCMC chain.
-            Defaults to 50 for small intial test.
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
 
-        MCMCsteps, int
-            Optional: Number of steps used for sampling the likelihood by the MCMC.
-            chain. Defaults to 100 for small initial tests.
+        Notes
+        -----
 
-        nwalkers, int
-            Optional: Number of walkers used by the MCMC. Defaults to 40. Should
-            (statistically) be at least 2 times the number of free parameters
+        This method uses copies of the internal kernel and mean model
+        objects, as those objects contain slightly unhelpful state information.
+
         """
 
         if self.independent_variables is None:
-            self.build_arrays()
+            # Creates independent_variables, dependent_variables.
+            self._build_arrays(
+                model_specification=model_specification,
+                model_parameters=model_parameters,
+                model_values=model_values,
+            )
 
-        if kernel is None:
+        if self.kernel is None:
             number_of_kernel_dimensions = (
                 self.model_specification.number_of_parameters + 1
             )
 
-            kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
+            self.kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
             )
 
-        if mean_model is not None:
-            mean_model.train(
+        if self.mean_model is not None:
+            self.mean_model.train(
                 independent=self.independent_variables,
                 dependent=self.dependent_variables,
             )
 
             gaussian_process = george.GP(
-                copy.deepcopy(kernel),
+                copy.deepcopy(self.kernel),
                 fit_kernel=True,
-                mean=mean_model.george_model,
+                mean=self.mean_model.george_model,
                 fit_mean=False,
             )
         else:
             gaussian_process = george.GP(
-                copy.deepcopy(kernel),
+                copy.deepcopy(self.kernel),
             )
 
         # TODO: Figure out how to include non-symmetric errors.
@@ -214,14 +257,14 @@ class GaussianProcessEmulatorMCMC(object):
 
         # set up a MCMC sampling routine
         ndim = len(gaussian_process)
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, log_likelihood)
+        sampler = emcee.EnsembleSampler(self.walkers, ndim, log_likelihood)
         # Assign starting points to the walkers, at a small distance from middle point
-        p0 = p0_start + 1e-4 * np.random.randn(nwalkers, ndim)
+        p0 = p0_start + 1e-4 * np.random.randn(self.walkers, ndim)
 
-        p0, _, _ = sampler.run_mcmc(p0, burn_in_steps)
-        sampler.run_mcmc(p0, MCMCsteps)
+        p0, _, _ = sampler.run_mcmc(p0, self.burn_in_steps)
+        sampler.run_mcmc(p0, self.mcmc_steps)
 
-        samples = sampler.get_chain()[:, burn_in_steps:, :].reshape((-1, ndim))
+        samples = sampler.get_chain()[:, self.burn_in_steps :, :].reshape((-1, ndim))
 
         result = np.mean(samples, axis=0)
 
@@ -296,8 +339,6 @@ class GaussianProcessEmulatorMCMC(object):
         self,
         independent: np.array,
         model_parameters: Dict[str, float],
-        use_hyperparameter_error: bool = False,
-        samples_for_error: int = 100,
     ) -> np.array:
         """
         Predict values from the trained emulator contained within this object.
@@ -312,13 +353,6 @@ class GaussianProcessEmulatorMCMC(object):
         model_parameters: Dict[str, float]
             The point in model parameter space to create predicted
             values at.
-
-        use_hyperparameter_error, bool
-            Switch for including errors originating from uncertain
-            hyperparameters in the prediction outputs
-
-        samples_for_error, int
-            Number of MCMC samples to use for hyperparameter error estimation
 
         Returns
         -------
@@ -338,7 +372,10 @@ class GaussianProcessEmulatorMCMC(object):
                 "to make predictions."
             )
 
-        if len(self.hyperparameter_samples[:, 0]) < samples_for_error:
+        if (
+            len(self.hyperparameter_samples[:, 0]) < self.samples_for_error
+            and self.use_hyperparameter_error
+        ):
             raise ValueError(
                 "Number of subsamples must be less then the total number of samples"
             )
@@ -359,15 +396,15 @@ class GaussianProcessEmulatorMCMC(object):
             y=self.dependent_variables, t=t, return_cov=False, return_var=True
         )
 
-        if use_hyperparameter_error:
+        if self.use_hyperparameter_error:
             # Take a subsample of the MCMC samples
             sample_indices = np.random.choice(
                 range(len(self.hyperparameter_samples[:, 0])),
-                samples_for_error,
+                self.samples_for_error,
                 replace=False,
             )
             hyperparameter_error_model_array = np.empty(
-                (len(independent), samples_for_error), dtype=np.float64
+                (len(independent), self.samples_for_error), dtype=np.float64
             )
             for index, sample in enumerate(sample_indices):
                 self.emulator.set_parameter_vector(

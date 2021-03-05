@@ -75,19 +75,19 @@ for unique_identifier in tqdm(leave_out_order):
     left_out_data = scaling_relation.model_values.pop(unique_identifier)
 
     emulator = GaussianProcessEmulator(
-        model_specification=spec,
-        model_parameters=parameters,
-        model_values=scaling_relation,
+        mean_model=LinearMeanModel(),
     )
-
-    emulator.build_arrays()
 
     emulators[unique_identifier] = emulator
 
     scaling_relation.model_values[unique_identifier] = left_out_data
 
 
-train_model = lambda x: x.fit_model(mean_model=LinearMeanModel())
+train_model = lambda x: x.fit_model(
+    model_specification=spec,
+    model_parameters=parameters,
+    model_values=scaling_relation,
+)
 
 list(map(train_model, [emulators["9"]]))
 
