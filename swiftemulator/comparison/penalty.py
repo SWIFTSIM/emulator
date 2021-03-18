@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 
 from swiftemulator.backend.model_values import ModelValues
 
-from typing import Dict, Hashable, Optional, Union, Callable
+from typing import Dict, Hashable, Optional, Union, Callable, List
 
 
 @attr.s
