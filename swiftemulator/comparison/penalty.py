@@ -179,10 +179,12 @@ class PenaltyCalculator(object):
             dependent = data["dependent"]
             dependent_error = data.get("dependent_error", None)
 
-            penalties[unique_id] = self.penalty(
-                independent=independent,
-                dependent=dependent,
-                dependent_error=dependent_error,
+            penalties[unique_id] = collate_with(
+                self.penalty(
+                    independent=independent,
+                    dependent=dependent,
+                    dependent_error=dependent_error,
+                )
             )
 
         return penalties
