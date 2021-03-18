@@ -569,7 +569,9 @@ class L1VariablePenaltyCalculator(PenaltyCalculator):
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
 
-        offsets[dependent < obs_dependent] *= self.offset_below_above_ratio
+        offsets[dependent < obs_dependent] = (
+            self.offset_below_above_ratio * offsets[dependent < obs_dependent]
+        )
 
         penalties = np.abs(obs_dependent - dependent) / offsets
 
@@ -677,7 +679,9 @@ class L1SqueezePenaltyCalculator(PenaltyCalculator):
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
 
-        offsets[dependent < obs_dependent] *= self.offset_below_above_ratio
+        offsets[dependent < obs_dependent] = (
+            self.offset_below_above_ratio * offsets[dependent < obs_dependent]
+        )
 
         penalties = np.abs(obs_dependent - dependent) / offsets
 
