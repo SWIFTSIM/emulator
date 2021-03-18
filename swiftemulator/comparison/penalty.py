@@ -568,7 +568,7 @@ class L1VariablePenaltyCalculator(PenaltyCalculator):
         )
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
-        valid_and_low_mask = np.logical_and(dependent < obs_dependent, valid_data_mask)
+        valid_and_low_mask = dependent[valid_data_mask] < obs_dependent
 
         offsets[valid_and_low_mask] *= self.offset_below_above_ratio
 
@@ -677,7 +677,7 @@ class L1SqueezePenaltyCalculator(PenaltyCalculator):
         )
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
-        valid_and_low_mask = np.logical_and(dependent < obs_dependent, valid_data_mask)
+        valid_and_low_mask = dependent[valid_data_mask] < obs_dependent
 
         offsets[valid_and_low_mask] *= self.offset_below_above_ratio
 
