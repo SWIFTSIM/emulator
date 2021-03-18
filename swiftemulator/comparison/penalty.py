@@ -174,10 +174,10 @@ class PenaltyCalculator(object):
 
         penalties = {}
 
-        for unique_id, model in model_values.model_values.items():
-            independent = model["independent"]
-            dependent = model["dependent"]
-            dependent_error = model.get("dependent_error", None)
+        for unique_id, data in model.model_values.items():
+            independent = data["independent"]
+            dependent = data["dependent"]
+            dependent_error = data.get("dependent_error", None)
 
             penalties[unique_id] = self.penalty(
                 independent=independent,
