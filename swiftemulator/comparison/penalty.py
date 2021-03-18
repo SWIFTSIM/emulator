@@ -314,7 +314,7 @@ class L1PenaltyCalculator(PenaltyCalculator):
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
 
-        penalties = np.abs(obs_dependent - dependent) / self.offset
+        penalties = np.abs(obs_dependent - dependent[valid_data_mask]) / self.offset
 
         return np.minimum(penalties, 1.0)
 
@@ -394,12 +394,12 @@ class L1PenaltyCalculatorOneSided(PenaltyCalculator):
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
 
-        penalties = np.abs(obs_dependent - dependent) / self.offset
+        penalties = np.abs(obs_dependent - dependent[valid_data_mask]) / self.offset
 
         if self.maximum_penalty == "above":
-            penalties[dependent > obs_dependent] = 1.0
+            penalties[dependent[valid_data_mask] > obs_dependent] = 1.0
         elif self.maximum_penalty == "below":
-            penalties[dependent < obs_dependent] = 1.0
+            penalties[dependent[valid_data_mask] < obs_dependent] = 1.0
 
         return np.minimum(penalties, 1.0)
 
@@ -465,7 +465,7 @@ class L2PenaltyCalculator(PenaltyCalculator):
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
 
-        penalties = (obs_dependent - dependent) ** 2 / self.offset ** 2
+        penalties = (obs_dependent - dependent[valid_data_mask]) ** 2 / self.offset ** 2
 
         return np.minimum(penalties, 1.0)
 
@@ -572,7 +572,7 @@ class L1VariablePenaltyCalculator(PenaltyCalculator):
 
         offsets[valid_and_low_mask] *= self.offset_below_above_ratio
 
-        penalties = np.abs(obs_dependent - dependent) / offsets
+        penalties = np.abs(obs_dependent - dependent[valid_data_mask]) / offsets
 
         return np.minimum(penalties, 1.0)
 
@@ -681,6 +681,6 @@ class L1SqueezePenaltyCalculator(PenaltyCalculator):
 
         offsets[valid_and_low_mask] *= self.offset_below_above_ratio
 
-        penalties = np.abs(obs_dependent - dependent) / offsets
+        penalties = np.abs(obs_dependent - dependent[valid_data_mask]) / offsets
 
         return np.minimum(penalties, 1.0)
