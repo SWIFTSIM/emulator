@@ -552,7 +552,118 @@ class L1VariablePenaltyCalculator(PenaltyCalculator):
             1.0
             / (
                 1.0
-                + np.exp((self.offset_transition - independent) / self.transition_width)
+                + np.exp(
+                    (self.offset_transition - independent[valid_data_mask])
+                    / self.transition_width
+                )
+            )
+        )
+
+        obs_dependent = self.interpolator_values(independent[valid_data_mask])
+
+        offsets[dependent < obs_dependent] *= self.offset_below_above_ratio
+
+        penalties = np.abs(obs_dependent - dependent) / offsets
+
+        return np.minimum(penalties, 1.0)
+
+
+@attr.s
+class L1SqueezePenaltyCalculator(PenaltyCalculator):
+    """
+    Penalty calculator for an L1-type norm, i.e. a linear
+    penalty function away from the data. This penalty function is
+    capped after a (vertical) distance, provided with units
+    if the provided observation is used in linear space, or
+    provided as a logarithmic offset in dex if in log space.
+
+    In this version the offset is variable, with it being
+    'squeezed' at a point over a width.
+
+    Parameters
+    ----------
+
+    offset_squeeze: Union[unyt.unyt_quantity, float]
+        The vertical offset at which to set the L1 norm to the
+        maximum at the pinch point.
+
+    offset_normal: Union[unyt.unyt_quantity, float]
+        The usual vertical offset at which to set the L1 norm
+        to the maximum.
+
+    offset_transition: Union[unyt.unyt_quantity, float]
+        The independent variable at which you would like the
+        offset to transition from ``offset_lower`` to
+        ``offset_upper``.
+
+    transition_width: Union[unyt.unyt_quantity, float]
+        The width of the transition between offsets, centered
+        around ``offset_transition``.
+
+    lower: Union[unyt.unyt_quantity, float]
+        The lowest independent value to calculate the model
+        offset at.
+
+    upper: Union[unyt.unyt_quantity, float]
+        The highest independent value to calculate the model
+        offset at.
+
+    offset_below_above_ratio: float, optional
+        Ratio of the allowed offset below or above the data. If this
+        takes a value of less than 1.0, models below the data are penalised
+        more (by that factor) than models above. Default: 1.0
+    """
+
+    offset_squeeze: Union[unyt.unyt_quantity, float] = attr.ib()
+    offset_normal: Union[unyt.unyt_quantity, float] = attr.ib()
+    offset_transition: Union[unyt.unyt_quantity, float] = attr.ib()
+    transition_width: Union[unyt.unyt_quantity, float] = attr.ib()
+    lower: Union[unyt.unyt_quantity, float] = attr.ib()
+    upper: Union[unyt.unyt_quantity, float] = attr.ib()
+    offset_below_above_ratio: float = attr.ib(default=1.0)
+
+    def observation_interpolation(self):
+        super().observation_interpolation()
+
+        # Convert limits to sensible units and log them
+        # if necessary
+        if not self.log_independent:
+            self.lower.convert_to_units(self.independent_units)
+            self.upper.convert_to_units(self.independent_units)
+            self.offset_transition.convert_to_units(self.independent_units)
+            self.transition_width.convert_to_units(self.independent_units)
+
+        if not self.log_dependent:
+            self.offset_squeeze.convert_to_units(self.dependent_units)
+            self.offset_normal.convert_to_units(self.dependent_units)
+
+        return
+
+    def penalty(
+        self,
+        independent: np.array,
+        dependent: np.array,
+        dependent_error: Optional[np.array] = None,
+    ) -> float:
+        valid_data_mask = np.logical_and(
+            independent >= self.lower, independent < self.upper
+        )
+
+        number_of_valid_points = valid_data_mask.sum()
+
+        if number_of_valid_points == 0:
+            return 0.0
+
+        offsets = self.offset_normal - (self.offset_normal - self.offset_squeeze) * (
+            np.exp(
+                -0.5
+                * (
+                    (
+                        (independent[valid_data_mask] - self.offset_transition)
+                        / self.transition_width
+                    )
+                    ** 2
+                )
             )
         )
 
