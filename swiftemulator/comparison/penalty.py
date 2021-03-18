@@ -12,7 +12,7 @@ from scipy.interpolate import interp1d
 
 from swiftemulator.backend.model_values import ModelValues
 
-from typing import Dict, Hashable, Optional, Union
+from typing import Dict, Hashable, Optional, Union, Callable
 
 
 @attr.s
@@ -120,7 +120,7 @@ class PenaltyCalculator(object):
         independent: np.array,
         dependent: np.array,
         dependent_error: Optional[np.array] = None,
-    ) -> float:
+    ) -> List[float]:
         """
         Calculate the penalty function, relative to the observational
         data, for this model.
@@ -137,13 +137,15 @@ class PenaltyCalculator(object):
         Returns
         -------
 
-        penalty, float
-            The average penalty function for this model, between 0 and 1.
+        penalty, List[float]
+            The penalties for this model, between 0 and 1 each.
         """
 
         raise NotImplementedError
 
-    def penalties(self, model: ModelValues) -> Dict[Hashable, float]:
+    def penalties(
+        self, model: ModelValues, collate_with: Callable
+    ) -> Dict[Hashable, float]:
         """
         Calculate the penalty function for all models in the
         model values container.
@@ -154,6 +156,12 @@ class PenaltyCalculator(object):
         model: ModelValues
             The set of model (values) to calculate the penalty
             function for.
+
+        collate_with: Callable
+            A function that takes a numpy array and returns the
+            'global' penalty for a model given the input for all
+            of the valid points in the array. Examples could be
+            ``np.max``, ``np.mean``, ``np.median``.
 
 
         Returns
