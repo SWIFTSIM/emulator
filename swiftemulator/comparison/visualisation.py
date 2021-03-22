@@ -10,7 +10,7 @@ from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
 
 from typing import Dict, Hashable, Tuple, Iterable
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, LogNorm
 from swiftsimio.visualisation.projection import scatter
 
 import matplotlib.pyplot as plt
@@ -40,7 +40,7 @@ def visualise_offsets_mean(
 
     # Build temporary 1D arrays of parameters/offsets in correct ordering
     ordered_offsets = np.array([offsets[x] for x in simulation_ordering])
-    ordered_norms = 1.0 - Normalize()(ordered_offsets)
+    ordered_norms = 1.0 - ordered_offsets
 
     limits = model_specification.parameter_limits
     # Parameters must be re-scaled to the range [0,1] for smoothed projection.
@@ -91,6 +91,7 @@ def visualise_offsets_mean(
                 ratio_grid,
                 extent=limits_y + limits_x,
                 origin="lower",
+                norm=LogNorm(vmin=0.5, vmax=0.9, clip=True)
             )
 
             ax.set_ylim(*limits_x)

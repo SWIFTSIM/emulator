@@ -108,8 +108,8 @@ def load_pipeline_outputs(
             if scaling_relation in log_dependent:
                 # Handle case of dependent errors needing to be logged.
                 if dependent_error.ndim > 1:
-                    lower = dependent - dependent_error[:0]
-                    upper = dependent + dependent_error[:1]
+                    lower = dependent - dependent_error[0, :]
+                    upper = dependent + dependent_error[1, :]
                 else:
                     lower = dependent - dependent_error
                     upper = dependent + dependent_error
