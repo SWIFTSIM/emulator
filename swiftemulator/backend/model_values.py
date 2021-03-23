@@ -77,6 +77,18 @@ class ModelValues(object):
 
         return
 
+    def items(self):
+        return self.model_values.items()
+
+    def keys(self):
+        return self.model_values.keys()
+
+    def values(self):
+        return self.model_values.values()
+
+    def __getitem__(self, key):
+        return self.model_values[key]
+
     @property
     def number_of_variables(self) -> int:
         """
