@@ -197,4 +197,4 @@ def mock_sweep(
             "dependent_error": dep_err,
         }
 
-    return ModelValues(values=emulated_models), parameters
+    return ModelValues(model_values=emulated_models), parameters
