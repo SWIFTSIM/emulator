@@ -158,8 +158,10 @@ def mock_sweep(
         {} if predict_values_kwargs is None else predict_values_kwargs
     )
 
+    sweep_parameter_index = model_specification.parameter_names.index(sweep_parameter)
+
     sweep_values = np.linspace(
-        *model_specification.parameter_limits[sweep_parameter], samples
+        *model_specification.parameter_limits[sweep_parameter_index], samples
     )
 
     parameters = ModelParameters(
