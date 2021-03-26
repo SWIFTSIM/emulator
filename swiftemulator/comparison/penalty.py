@@ -242,7 +242,7 @@ class PenaltyCalculator(object):
         if self.log_dependent:
             y = np.log10(y.value)
 
-        ax.plot(x, y, linestyle="dashed")
+        ax.plot(x, y, linestyle="dashed", marker="o")
 
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
@@ -684,5 +684,454 @@ class L1SqueezePenaltyCalculator(PenaltyCalculator):
         offsets[valid_and_low_mask] *= self.offset_below_above_ratio
 
         penalties = np.abs(obs_dependent - dependent[valid_data_mask]) / offsets
+
+        return np.minimum(penalties, 1.0)
+
+
+@attr.s
+class GaussianDataErrorsPenaltyCalculator(PenaltyCalculator):
+    """
+    Penalty calculator for observations that include errors.
+    This penalty function uses a Gaussian distribution around
+    the data, based on the observational errors. Capped at a
+    input number of sigmas away from the data.
+    ----------
+    sigma_max: Union[unyt.unyt_quantity, float]
+        The number of sigmas at which the function is capped.
+    lower: Union[unyt.unyt_quantity, float]
+        The lowest independent value to calculate the model
+        offset at.
+    upper: Union[unyt.unyt_quantity, float]
+        The highest independent value to calculate the model
+        offset at.
+    """
+
+    sigma_max: Union[unyt.unyt_quantity, float] = attr.ib()
+    lower: Union[unyt.unyt_quantity, float] = attr.ib()
+    upper: Union[unyt.unyt_quantity, float] = attr.ib()
+
+    error_interpolator_values: interp1d
+
+    def observation_interpolation(self):
+        super().observation_interpolation()
+
+        x = self.observation.x.to(self.independent_units)
+        y_scatter = self.observation.y_scatter.to(self.dependent_units)
+
+        if self.log_independent:
+            x = np.log10(x.value)
+
+        # Propagate errors to log space if needed
+        if self.log_independent:
+            y = self.observation.y.to(self.dependent_units)
+            y_scatter = np.abs(y_scatter / (y * np.log(10)))
+
+        # Account for unsymmetric errors
+        if y_scatter.ndim > 1:
+            y_scatter = np.mean(y_scatter, axis=0)
+
+        fill_value = lambda x, y_scatter: (y_scatter[x.argmin()], y_scatter[x.argmax()])
+
+        self.error_interpolator_values = interp1d(
+            x=x,
+            y=y_scatter,
+            kind="linear",
+            copy=False,
+            bounds_error=False,
+            fill_value=fill_value(x, y_scatter),
+        )
+
+        # Convert limits to sensible units and log them
+        # if necessary
+        if not self.log_independent:
+            self.lower.convert_to_units(self.independent_units)
+            self.upper.convert_to_units(self.independent_units)
+
+        return
+
+    def penalty(
+        self,
+        independent: np.array,
+        dependent: np.array,
+        dependent_error: Optional[np.array] = None,
+    ) -> List[float]:
+        """
+        Calculate the penalty function, relative to the observational
+        data, for this model.
+        independent: np.array
+            The independent data.
+        dependent: np.array
+            The dependent data for comparison.
+        dependent_error: np.array, optional
+            The dependent errors, for comparison.
+        Returns
+        -------
+        penalty, List[float]
+            The penalties for this model, between 0 and 1 each.
+        """
+
+        valid_data_mask = np.logical_and(
+            independent >= self.lower, independent < self.upper
+        )
+
+        number_of_valid_points = valid_data_mask.sum()
+
+        if number_of_valid_points == 0:
+            return 0.0
+
+        obs_dependent = self.interpolator_values(independent[valid_data_mask])
+        obs_dependent_errors = self.error_interpolator_values(
+            independent[valid_data_mask]
+        )
+
+        penalties = 1.0 - np.exp(
+            -0.5
+            * (
+                (dependent[valid_data_mask] - obs_dependent) ** 2
+                / (obs_dependent_errors ** 2)
+            )
+        )
+
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
+        penalties[penalties > sigma_max_mask_value] = 1.0
+
+        return np.minimum(penalties, 1.0)
+
+
+@attr.s
+class GaussianPercentErrorsPenaltyCalculator(PenaltyCalculator):
+    """
+    Penalty calculator that that uses Gaussian errors with
+    widths based on the percentages difference between the model
+    and the data.
+    ----------
+    percent_error: float
+        percent error that sets the one-sigma deviation,
+        in units of percent (0-100).
+    sigma_max: float
+        The number of sigmas at which the function is capped.
+    lower: Union[unyt.unyt_quantity, float]
+        The lowest independent value to calculate the model
+        offset at.
+    upper: Union[unyt.unyt_quantity, float]
+        The highest independent value to calculate the model
+        offset at.
+    """
+
+    percent_error: float = attr.ib()
+    sigma_max: float = attr.ib()
+    lower: Union[unyt.unyt_quantity, float] = attr.ib()
+    upper: Union[unyt.unyt_quantity, float] = attr.ib()
+
+    def observation_interpolation(self):
+        super().observation_interpolation()
+
+        # Convert limits to sensible units and log them
+        # if necessary
+        if not self.log_independent:
+            self.lower.convert_to_units(self.independent_units)
+            self.upper.convert_to_units(self.independent_units)
+
+        return
+
+    def penalty(
+        self,
+        independent: np.array,
+        dependent: np.array,
+        dependent_error: Optional[np.array] = None,
+    ) -> List[float]:
+        """
+        Calculate the penalty function, relative to the observational
+        data, for this model.
+        independent: np.array
+            The independent data.
+        dependent: np.array
+            The dependent data for comparison.
+        dependent_error: np.array, optional
+            The dependent errors, for comparison.
+        Returns
+        -------
+        penalty, List[float]
+            The penalties for this model, between 0 and 1 each.
+        """
+
+        valid_data_mask = np.logical_and(
+            independent >= self.lower, independent < self.upper
+        )
+
+        number_of_valid_points = valid_data_mask.sum()
+
+        if number_of_valid_points == 0:
+            return 0.0
+
+        obs_dependent = self.interpolator_values(independent[valid_data_mask])
+
+        penalties = 1.0 - np.exp(
+            -0.5
+            * (
+                (dependent[valid_data_mask] - obs_dependent) ** 2
+                / ((obs_dependent * (self.percent_error / 100)) ** 2)
+            )
+        )
+
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
+        penalties[penalties > sigma_max_mask_value] = 1.0
+
+        return np.minimum(penalties, 1.0)
+
+
+@attr.s
+class GaussianDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
+    """
+    Penalty calculator that that uses Gaussian errors based
+    on the observational data. Includes a floor based on a
+    percent error. It will pick the worst out of the two.
+    This is meant as a way to not fit better then the
+    emulator allows, while also not constraining stronger
+    than observations.
+    ----------
+    percent_error: float
+        percent error that sets the one-sigma deviation,
+        in units of percent (0-100).
+    sigma_max: float
+        The number of sigmas at which the function is capped.
+    lower: Union[unyt.unyt_quantity, float]
+        The lowest independent value to calculate the model
+        offset at.
+    upper: Union[unyt.unyt_quantity, float]
+        The highest independent value to calculate the model
+        offset at.
+    """
+
+    percent_error: float = attr.ib()
+    sigma_max: float = attr.ib()
+    lower: Union[unyt.unyt_quantity, float] = attr.ib()
+    upper: Union[unyt.unyt_quantity, float] = attr.ib()
+
+    error_interpolator_values: interp1d
+
+    def observation_interpolation(self):
+        super().observation_interpolation()
+
+        x = self.observation.x.to(self.independent_units)
+        y_scatter = self.observation.y_scatter.to(self.dependent_units)
+
+        if self.log_independent:
+            x = np.log10(x.value)
+
+        # Propagate errors to log space if needed
+        if self.log_independent:
+            y = self.observation.y.to(self.dependent_units)
+            y_scatter = np.abs(y_scatter / (y * np.log(10)))
+
+        # Account for unsymmetric errors
+        if y_scatter.ndim > 1:
+            y_scatter = np.mean(y_scatter, axis=0)
+
+        fill_value = lambda x, y_scatter: (y_scatter[x.argmin()], y_scatter[x.argmax()])
+
+        self.error_interpolator_values = interp1d(
+            x=x,
+            y=y_scatter,
+            kind="linear",
+            copy=False,
+            bounds_error=False,
+            fill_value=fill_value(x, y_scatter),
+        )
+
+        # Convert limits to sensible units and log them
+        # if necessary
+        if not self.log_independent:
+            self.lower.convert_to_units(self.independent_units)
+            self.upper.convert_to_units(self.independent_units)
+
+        return
+
+    def penalty(
+        self,
+        independent: np.array,
+        dependent: np.array,
+        dependent_error: Optional[np.array] = None,
+    ) -> List[float]:
+        """
+        Calculate the penalty function, relative to the observational
+        data, for this model.
+        independent: np.array
+            The independent data.
+        dependent: np.array
+            The dependent data for comparison.
+        dependent_error: np.array, optional
+            The dependent errors, for comparison.
+        Returns
+        -------
+        penalty, List[float]
+            The penalties for this model, between 0 and 1 each.
+        """
+
+        valid_data_mask = np.logical_and(
+            independent >= self.lower, independent < self.upper
+        )
+
+        number_of_valid_points = valid_data_mask.sum()
+
+        if number_of_valid_points == 0:
+            return 0.0
+
+        obs_dependent = self.interpolator_values(independent[valid_data_mask])
+        obs_dependent_errors = self.error_interpolator_values(
+            independent[valid_data_mask]
+        )
+
+        penalties_data = 1.0 - np.exp(
+            -0.5
+            * (
+                (dependent[valid_data_mask] - obs_dependent) ** 2
+                / (obs_dependent_errors ** 2)
+            )
+        )
+
+        penalties_percent_error = 1.0 - np.exp(
+            -0.5
+            * (
+                (dependent[valid_data_mask] - obs_dependent) ** 2
+                / ((obs_dependent * (self.percent_error / 100)) ** 2)
+            )
+        )
+
+        penalties = np.minimum(penalties_data, penalties_percent_error)
+
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
+        penalties[penalties > sigma_max_mask_value] = 1.0
+
+        return np.minimum(penalties, 1.0)
+
+
+@attr.s
+class GaussianWeigthedDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
+    """
+    Penalty calculator that that uses Gaussian errors based
+    on the observational data. Includes a floor based on a
+    percent error. It will pick the worst out of the two.
+    This is meant as a way to not fit better then the
+    emulator allows, while also not constraining stronger
+    than observations.
+    ----------
+    percent_error: float
+        percent error that sets the one-sigma deviation,
+        in units of percent (0-100).
+    sigma_max: float
+        The number of sigmas at which the function is capped.
+    lower: Union[unyt.unyt_quantity, float]
+        The lowest independent value to calculate the model
+        offset at.
+    upper: Union[unyt.unyt_quantity, float]
+        The highest independent value to calculate the model
+        offset at.
+    weigth: A general weigth that scales the entire range of
+        errors, but keeps relative weights intact.
+    """
+
+    percent_error: float = attr.ib()
+    sigma_max: float = attr.ib()
+    weigth: float = attr.ib()
+    lower: Union[unyt.unyt_quantity, float] = attr.ib()
+    upper: Union[unyt.unyt_quantity, float] = attr.ib()
+
+    error_interpolator_values: interp1d
+
+    def observation_interpolation(self):
+        super().observation_interpolation()
+
+        x = self.observation.x.to(self.independent_units)
+        y_scatter = self.observation.y_scatter.to(self.dependent_units)
+
+        if self.log_independent:
+            x = np.log10(x.value)
+
+        # Propagate errors to log space if needed
+        if self.log_independent:
+            y = self.observation.y.to(self.dependent_units)
+            y_scatter = np.abs(y_scatter / (y * np.log(10)))
+
+        # Account for unsymmetric errors
+        if y_scatter.ndim > 1:
+            y_scatter = np.mean(y_scatter, axis=0)
+
+        fill_value = lambda x, y_scatter: (y_scatter[x.argmin()], y_scatter[x.argmax()])
+
+        self.error_interpolator_values = interp1d(
+            x=x,
+            y=y_scatter,
+            kind="linear",
+            copy=False,
+            bounds_error=False,
+            fill_value=fill_value(x, y_scatter),
+        )
+
+        # Convert limits to sensible units and log them
+        # if necessary
+        if not self.log_independent:
+            self.lower.convert_to_units(self.independent_units)
+            self.upper.convert_to_units(self.independent_units)
+
+        return
+
+    def penalty(
+        self,
+        independent: np.array,
+        dependent: np.array,
+        dependent_error: Optional[np.array] = None,
+    ) -> List[float]:
+        """
+        Calculate the penalty function, relative to the observational
+        data, for this model.
+        independent: np.array
+            The independent data.
+        dependent: np.array
+            The dependent data for comparison.
+        dependent_error: np.array, optional
+            The dependent errors, for comparison.
+        Returns
+        -------
+        penalty, List[float]
+            The penalties for this model, between 0 and 1 each.
+        """
+
+        valid_data_mask = np.logical_and(
+            independent >= self.lower, independent < self.upper
+        )
+
+        number_of_valid_points = valid_data_mask.sum()
+
+        if number_of_valid_points == 0:
+            return 0.0
+
+        obs_dependent = self.interpolator_values(independent[valid_data_mask])
+        obs_dependent_errors = self.error_interpolator_values(
+            independent[valid_data_mask]
+        )
+
+        penalties_data = 1.0 - np.exp(
+            -0.5
+            * self.weigth
+            * (
+                (dependent[valid_data_mask] - obs_dependent) ** 2
+                / (obs_dependent_errors ** 2)
+            )
+        )
+
+        penalties_percent_error = 1.0 - np.exp(
+            -0.5
+            * self.weigth
+            * (
+                (dependent[valid_data_mask] - obs_dependent) ** 2
+                / ((obs_dependent * (self.percent_error / 100)) ** 2)
+            )
+        )
+
+        penalties = np.minimum(penalties_data, penalties_percent_error)
+
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
+        penalties[penalties > sigma_max_mask_value] = 1.0
 
         return np.minimum(penalties, 1.0)
