@@ -78,6 +78,9 @@ class ModelParameters(object):
     def __getitem__(self, key):
         return self.model_parameters[key]
 
+    def __len__(self):
+        return len(self.model_parameters)
+
     def find_closest_model(
         self, comparison_parameters: Dict[str, float], number_of_close_models: int = 1
     ) -> Tuple[List[Hashable], List[Dict[str, float]]]:
