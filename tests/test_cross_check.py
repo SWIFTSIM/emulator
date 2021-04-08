@@ -66,3 +66,7 @@ def test_basic_emulator_generator():
         model_parameters=model_parameters,
         model_values=model_values,
     )
+
+    cross_check.build_mocked_model_values(emulate_at=np.random.rand(10) * 10)
+
+    cross_check.build_mocked_model_values_original_independent()

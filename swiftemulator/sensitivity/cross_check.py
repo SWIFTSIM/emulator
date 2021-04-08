@@ -117,6 +117,96 @@ class CrossCheck(object):
 
         return
 
+    def build_mocked_model_values_original_independent(self) -> ModelValues:
+        """ "
+        Builds a mocked :class:`ModelValues` container, using the cross
+        emulators. The emulators are evaluated at the same independent
+        variables that were 'left out'.
+
+        Returns
+        -------
+
+        model_values: ModelValues
+            The model values container with each leave-one-out
+            scaling relation predicted. This is also set as
+            ``cross_model_values``.
+        """
+
+        if self.cross_emulators is None:
+            raise AttributeError(
+                "You need to build the emulators before the prediction step."
+            )
+
+        cross_model_values = {}
+
+        for unique_identifier in self.model_values.keys():
+            independent = self.model_values[unique_identifier]["independent"]
+
+            emulated, emulated_error = self.cross_emulators[
+                unique_identifier
+            ].predict_values(
+                independent,
+                model_parameters=self.model_parameters[unique_identifier],
+            )
+
+            cross_model_values[unique_identifier] = {
+                "independent": independent,
+                "dependent": emulated,
+                "dependent_error": np.sqrt(emulated_error),
+            }
+
+        cross_model_values = ModelValues(cross_model_values)
+
+        return cross_model_values
+
+    def build_mocked_model_values(self, emulate_at: np.array) -> ModelValues:
+        """
+        Builds a mocked :class:`ModelValues` container, using the cross
+        emulators. Similar to ``build_mocked_model_value_original_independent``
+        but evaluates all emulators at a consistent set of independent
+        variables.
+
+        Parameters
+        ----------
+
+        emulate_at: np.array
+            independent array where the emulator is evaluated.
+
+        Returns
+        -------
+
+        model_values: ModelValues
+            The model values container with each leave-one-out
+            scaling relation predicted. This is also set as
+            ``cross_model_values``.
+
+        """
+
+        if self.cross_emulators is None:
+            raise AttributeError(
+                "You need to build the emulators before the prediction step."
+            )
+
+        cross_model_values = {}
+
+        for unique_identifier in self.model_values.keys():
+            emulated, emulated_error = self.cross_emulators[
+                unique_identifier
+            ].predict_values(
+                emulate_at,
+                model_parameters=self.model_parameters[unique_identifier],
+            )
+
+            cross_model_values[unique_identifier] = {
+                "independent": emulate_at,
+                "dependent": emulated,
+                "dependent_error": np.sqrt(emulated_error),
+            }
+
+        cross_model_values = ModelValues(cross_model_values)
+
+        return cross_model_values
+
     def plot_results(
         self,
         emulate_at: np.array,
@@ -145,22 +235,18 @@ class CrossCheck(object):
             Label for vertical axis on the resultant figure.
         """
 
+        cross_model_values = self.build_mocked_model_values(emulate_at=emulate_at)
+
         for unique_identifier in self.cross_emulators.keys():
             fig, ax = plt.subplots()
 
-            emulated, emulated_error = self.cross_emulators[
-                unique_identifier
-            ].predict_values(
-                emulate_at,
-                model_parameters=self.model_parameters.model_parameters[
-                    unique_identifier
-                ],
-            )
+            emulated = cross_model_values[unique_identifier]["dependent"]
+            emulated_error = cross_model_values[unique_identifier]["dependent_error"]
 
             ax.fill_between(
                 emulate_at,
-                emulated - np.sqrt(emulated_error),
-                emulated + np.sqrt(emulated_error),
+                emulated - emulated_error,
+                emulated + emulated_error,
                 color="C1",
                 alpha=0.3,
                 linewidth=0.0,
