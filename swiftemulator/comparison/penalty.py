@@ -123,7 +123,10 @@ class PenaltyCalculator(object):
     ) -> List[float]:
         """
         Calculate the penalty function, relative to the observational
-        data, for this model.
+        data, for this model. It is highly recommended that you evaluate
+        the model at the same independent variables as the observational
+        data. The observational data is linearly interpolated to find a
+        prediction at the independent variables that you provide.
 
         independent: np.array
             The independent data.
@@ -149,6 +152,11 @@ class PenaltyCalculator(object):
         """
         Calculate the penalty function for all models in the
         model values container.
+
+        It is highly recommended that you evaluate the model at the same
+        independent variables as the observational data. The observational
+        data is linearly interpolated to find a prediction at the independent
+        variables that you provide.
 
         Parameters
         ----------
@@ -229,7 +237,7 @@ class PenaltyCalculator(object):
                 dependent_error=None,
             )
 
-        mappable = ax.pcolormesh(xs, ys, output, vmin=0.0, vmax=1.0)
+        mappable = ax.pcolormesh(xs, ys, output, vmin=0.0, vmax=1.0, rasterized=True)
         fig.colorbar(mappable=mappable, ax=ax, label="Penalty Function")
 
         # Plot obs data
