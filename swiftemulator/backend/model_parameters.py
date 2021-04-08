@@ -66,6 +66,18 @@ class ModelParameters(object):
                     "Models do not all have the same set of parameters."
                 )
 
+    def items(self):
+        return self.model_parameters.items()
+
+    def keys(self):
+        return self.model_parameters.keys()
+
+    def values(self):
+        return self.model_parameters.values()
+
+    def __getitem__(self, key):
+        return self.model_parameters[key]
+
     def find_closest_model(
         self, comparison_parameters: Dict[str, float], number_of_close_models: int = 1
     ) -> Tuple[List[Hashable], List[Dict[str, float]]]:
