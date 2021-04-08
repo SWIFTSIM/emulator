@@ -9,39 +9,30 @@ import sklearn.linear_model as lm
 
 from typing import Hashable, List, Optional, Dict
 
+from swiftemulator.emulators.base import BaseEmulator
+
 from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
 
 
 @attr.s
-class LinearModelEmulator(object):
+class LinearModelEmulator(BaseEmulator):
     """
-    Generator for emulators for individual scaling relations.
+    Emulator that builds an internal linear model (either a
+    basic linear model or a Lasso model), and fits it to the
+    data provided in the model specification, parameters, and
+    values containers.
 
     Parameters
     ----------
 
-    model_specification: ModelSpecification
-        Full instance of the model specification.
-
-    model_parameters: ModelParameters
-        Full instance of the model parameters.
-
-    model_values: ModelValues
-        Full instance of the model values describing
-        this individual scaling relation.
+    lasso_model_alpha: float
+        Alpha for the Lasso model. If this is 0.0 (the default)
+        basic linear regression is used.
     """
 
-    model_specification: ModelSpecification = attr.ib(
-        validator=attr.validators.instance_of(ModelSpecification)
-    )
-    model_parameters: ModelParameters = attr.ib(
-        validator=attr.validators.instance_of(ModelParameters)
-    )
-    model_values: ModelValues = attr.ib(
-        validator=attr.validators.instance_of(ModelValues)
-    )
+    lasso_model_alpha: float = attr.ib(default=0.0)
 
     ordering: Optional[List[Hashable]] = None
     parameter_order: Optional[List[str]] = None
@@ -50,18 +41,30 @@ class LinearModelEmulator(object):
     dependent_variables: Optional[np.array] = None
     dependent_variable_errors: Optional[np.array] = None
 
+    model_specification: Optional[ModelSpecification] = None
+    model_parameters: Optional[ModelParameters] = None
+    model_values: Optional[ModelValues] = None
+
     emulator: Optional[lm.LinearRegression] = None
 
-    def build_arrays(self):
+    def _build_arrays(
+        self,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
+    ):
         """
-        Builds the arrays for passing to `george`.
+        Builds the arrays for passing to the linear model.
         """
 
-        model_values = self.model_values.model_values
-        unique_identifiers = model_values.keys()
-        number_of_independents = self.model_values.number_of_variables
-        number_of_model_parameters = self.model_specification.number_of_parameters
-        model_parameters = self.model_parameters.model_parameters
+        self.model_specification = model_specification
+        self.model_parameters = model_parameters
+        self.model_values = model_values
+
+        unique_identifiers = model_values.model_values.keys()
+        number_of_independents = model_values.number_of_variables
+        number_of_model_parameters = model_specification.number_of_parameters
+        model_parameters = model_parameters.model_parameters
 
         independent_variables = np.empty(
             (number_of_independents, number_of_model_parameters + 1), dtype=np.float32
@@ -71,7 +74,7 @@ class LinearModelEmulator(object):
 
         dependent_variable_errors = np.empty((number_of_independents), dtype=np.float32)
 
-        self.parameter_order = self.model_specification.parameter_names
+        self.parameter_order = model_specification.parameter_names
         self.ordering = []
         filled_lines = 0
 
@@ -86,7 +89,7 @@ class LinearModelEmulator(object):
                 ]
             )
 
-            this_model = model_values[unique_identifier]
+            this_model = model_values.model_values[unique_identifier]
             model_independent = this_model["independent"]
             model_dependent = this_model["dependent"]
             model_error = this_model.get(
@@ -113,25 +116,43 @@ class LinearModelEmulator(object):
         self.dependent_variables = dependent_variables
         self.dependent_variable_errors = dependent_variable_errors
 
-    def fit_model(self, lasso_model_alpha=0.0):
+    def fit_model(
+        self,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
+    ):
         """
-        Fits the GPE model.
+        Fits the linear model, given the specification, parameters, and
+        values of the space.
 
         Parameters
         ----------
 
-        lasso_model_alpha, float
-            Alpha for the Lasso model. If this is 0.0 (the default)
-            basic linear regression is used.
+        model_specification: ModelSpecification
+            Full instance of the model specification.
+
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
+
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
+
         """
 
         if self.independent_variables is None:
-            self.build_arrays()
+            # Creates independent_variables, dependent_variables.
+            self._build_arrays(
+                model_specification=model_specification,
+                model_parameters=model_parameters,
+                model_values=model_values,
+            )
 
-        if lasso_model_alpha == 0.0:
+        if self.lasso_model_alpha == 0.0:
             linear_model = lm.LinearRegression(fit_intercept=True, normalize=True)
         else:
-            linear_model = lm.Lasso(alpha=lasso_model_alpha)
+            linear_model = lm.Lasso(alpha=self.lasso_model_alpha)
 
         # Conform the model to the modelling protocol
         linear_model.fit(self.independent_variables, self.dependent_variables)

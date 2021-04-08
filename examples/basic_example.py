@@ -66,22 +66,31 @@ for run_number in range(number_of_models):
 
 model_values = se.ModelValues(model_values=model_values)
 
-# Now we can perform the regression.
-generator = se.EmulatorGenerator(
-    model_specification=model_specification, model_parameters=model_parameters
+
+# Now perform the regression with different emulators.
+
+gpe_no_linear = se.emulators.gaussian_process.GaussianProcessEmulator()
+gpe_no_linear.fit_model(
+    model_specification=model_specification,
+    model_parameters=model_parameters,
+    model_values=model_values,
 )
 
-gpe_no_linear = generator.create_gaussian_process_emulator(model_values=model_values)
-gpe_no_linear.build_arrays()
-gpe_no_linear.fit_model(mean_model=None)
+gpe_with_linear = se.emulators.gaussian_process.GaussianProcessEmulator(
+    mean_model=se.mean_models.LinearMeanModel()
+)
+gpe_with_linear.fit_model(
+    model_specification=model_specification,
+    model_parameters=model_parameters,
+    model_values=model_values,
+)
 
-gpe_with_linear = generator.create_gaussian_process_emulator(model_values=model_values)
-gpe_with_linear.build_arrays()
-gpe_with_linear.fit_model(mean_model=se.mean_models.LinearMeanModel())
-
-lass = generator.create_linear_model_emulator(model_values=model_values)
-lass.build_arrays()
-lass.fit_model(lasso_model_alpha=0.0)
+lass = se.emulators.linear_model.LinearModelEmulator(lasso_model_alpha=0.0)
+lass.fit_model(
+    model_specification=model_specification,
+    model_parameters=model_parameters,
+    model_values=model_values,
+)
 
 example_independent = np.sort(np.random.rand(100))
 
