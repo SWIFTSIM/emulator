@@ -91,7 +91,7 @@ class ModelValues(object):
     def __getitem__(self, key):
         return self.model_values[key]
 
-        def __len__(self):
+    def __len__(self):
         return len(self.model_values)
 
     @property
