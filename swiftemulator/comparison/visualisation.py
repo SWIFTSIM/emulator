@@ -18,33 +18,79 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def visualise_offsets_mean(
+def visualise_penalties_mean(
     model_specification: ModelSpecification,
-    model_values: ModelValues,
     model_parameters: ModelParameters,
-    offsets: Dict[Hashable, float],
-    vmin: float = 0.5,
-    vmax: float = 0.5,
-    remove_ticks: bool = False,
+    penalties: Dict[Hashable, float],
+    norm: Normalize = Normalize(vmin=0.2, vmax=0.7, clip=True),
+    remove_ticks: bool = True,
+    figsize: Tuple[float] = (7.0, 7.0),
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
+    """
+    Visualises the penalties using SPH smoothing for each
+    individual model point.
+
+    Parameters
+    ----------
+
+    model_specification: ModelSpecification
+        The appropriate model specification. Used for the limits
+        of the figure.
+
+    model_parameters: ModelParameters
+        Parameters of the model, with the appropriate unique IDs.
+
+    penalties: Dict[Hashable, float]
+        Penalties for all parameters in ``model_parameters``, with
+        the key in this dictionary being the unique IDs.
+
+    norm: Normalize, optional
+        A ``matplotlib`` normalisation object. By default this uses
+        ``vmin=0.2`` and ``vmax=0.7``.
+
+    remove_ticks: bool, optional
+        Remove the axes ticks? This is recommended, as the plot can
+        become very cluttered if you don't do this. Default: ``True``.
+
+    figsize: Tuple[float], optional
+        The figure size to use. Defaults to 7 inches by 7 inches, the
+        size for a ``figure*`` in the MNRAS template.
+
+
+    Returns
+    -------
+
+    fig: Figure
+        The figure object.
+
+    axes: np.ndarray[Axes]
+        The individual axes.
+
+    Notes
+    -----
+
+    You can either change how the figure looks by using the figure
+    and axes objects that are returned, or by modifying the
+    ``matplotlib`` stylesheet you are currently using.
+    """
+
     number_of_parameters = model_specification.number_of_parameters
     grid_size = number_of_parameters
 
     fig, axes_grid = plt.subplots(
         grid_size,
         grid_size,
-        figsize=(grid_size, grid_size),
+        figsize=figsize,
         squeeze=True,
         sharex="col",
         sharey="row",
     )
 
-    visualisation_size = 2.0 / np.sqrt(len(model_values.model_values))
-    simulation_ordering = list(model_values.model_values.keys())
+    visualisation_size = 2.0 / np.sqrt(len(model_parameters))
+    simulation_ordering = list(model_parameters.keys())
 
     # Build temporary 1D arrays of parameters/offsets in correct ordering
-    ordered_offsets = np.array([offsets[x] for x in simulation_ordering])
-    ordered_norms = 1.0 - ordered_offsets
+    ordered_penalties = np.array([penalties[x] for x in simulation_ordering])
 
     limits = model_specification.parameter_limits
     # Parameters must be re-scaled to the range [0,1] for smoothed projection.
@@ -62,7 +108,7 @@ def visualise_offsets_mean(
         for index, parameter in enumerate(model_specification.parameter_names)
     ]
 
-    smoothing_lengths = np.ones_like(ordered_offsets) * visualisation_size
+    smoothing_lengths = np.ones_like(ordered_penalties) * visualisation_size
 
     for parameter_x, axes_column in enumerate(axes_grid):
         for parameter_y, ax in enumerate(axes_column):
@@ -74,7 +120,7 @@ def visualise_offsets_mean(
             norm_grid = scatter(
                 x=ordered_parameters[parameter_x],
                 y=ordered_parameters[parameter_y],
-                m=np.ones_like(ordered_norms),
+                m=np.ones_like(ordered_penalties),
                 h=smoothing_lengths,
                 res=512,
             )
@@ -82,7 +128,7 @@ def visualise_offsets_mean(
             weighted_grid = scatter(
                 x=ordered_parameters[parameter_x],
                 y=ordered_parameters[parameter_y],
-                m=ordered_norms,
+                m=ordered_penalties,
                 h=smoothing_lengths,
                 res=512,
             )
@@ -95,7 +141,7 @@ def visualise_offsets_mean(
                 ratio_grid,
                 extent=limits_y + limits_x,
                 origin="lower",
-                norm=Normalize(vmin=vmin, vmax=vmax, clip=True),
+                norm=norm,
             )
 
             ax.set_ylim(*limits_x)
@@ -128,34 +174,83 @@ def visualise_offsets_mean(
     return fig, ax
 
 
-def visualise_offsets_generic_statistic(
+def visualise_penalties_generic_statistic(
     model_specification: ModelSpecification,
-    model_values: ModelValues,
     model_parameters: ModelParameters,
-    offsets: Dict[Hashable, float],
+    penalties: Dict[Hashable, float],
     statistic: Optional[str] = None,
-    vmin: float = 0.5,
-    vmax: float = 0.5,
-    remove_ticks: bool = False,
+    norm: Normalize = Normalize(vmin=0.2, vmax=0.7, clip=True),
+    remove_ticks: bool = True,
+    figsize: Tuple[float] = (7.0, 7.0),
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
+    """
+    Visualises the penalties using basic binning.
+
+    Parameters
+    ----------
+
+    model_specification: ModelSpecification
+        The appropriate model specification. Used for the limits
+        of the figure.
+
+    model_parameters: ModelParameters
+        Parameters of the model, with the appropriate unique IDs.
+
+    penalties: Dict[Hashable, float]
+        Penalties for all parameters in ``model_parameters``, with
+        the key in this dictionary being the unique IDs.
+
+    statistic: str, optional
+        The statistic that you would like to compute. Allowed values
+        are the same as for ``scipy.stats.binned_statistic_2d``.
+        Defaults to ``mean``.
+
+    norm: Normalize, optional
+        A ``matplotlib`` normalisation object. By default this uses
+        ``vmin=0.2`` and ``vmax=0.7``.
+
+    remove_ticks: bool, optional
+        Remove the axes ticks? This is recommended, as the plot can
+        become very cluttered if you don't do this. Default: ``True``.
+
+    figsize: Tuple[float], optional
+        The figure size to use. Defaults to 7 inches by 7 inches, the
+        size for a ``figure*`` in the MNRAS template.
+
+    Returns
+    -------
+
+    fig: Figure
+        The figure object.
+
+    axes: np.ndarray[Axes]
+        The individual axes.
+
+    Notes
+    -----
+
+    You can either change how the figure looks by using the figure
+    and axes objects that are returned, or by modifying the
+    ``matplotlib`` stylesheet you are currently using.
+    """
+
     number_of_parameters = model_specification.number_of_parameters
     grid_size = number_of_parameters
 
     fig, axes_grid = plt.subplots(
         grid_size,
         grid_size,
-        figsize=(grid_size, grid_size),
+        figsize=figsize,
         squeeze=True,
         sharex="col",
         sharey="row",
     )
 
-    visualisation_size = 4.0 / np.sqrt(len(model_values.model_values))
-    simulation_ordering = list(model_values.model_values.keys())
+    visualisation_size = 4.0 / np.sqrt(len(model_parameters))
+    simulation_ordering = list(model_parameters.keys())
 
     # Build temporary 1D arrays of parameters/offsets in correct ordering
-    ordered_offsets = np.array([offsets[x] for x in simulation_ordering])
-    ordered_norms = 1.0 - ordered_offsets
+    ordered_penalties = np.array([penalties[x] for x in simulation_ordering])
 
     limits = model_specification.parameter_limits
     # Parameters must be re-scaled to the range [0,1] for projection.
@@ -187,7 +282,7 @@ def visualise_offsets_generic_statistic(
             grid = binned_statistic_2d(
                 x=ordered_parameters[name_x],
                 y=ordered_parameters[name_y],
-                values=ordered_norms,
+                values=ordered_penalties,
                 statistic=statistic,
                 bins=bins,
             )
@@ -196,7 +291,7 @@ def visualise_offsets_generic_statistic(
                 grid,
                 extent=limits_y + limits_x,
                 origin="lower",
-                norm=Normalize(vmin=vmin, vmax=vmax, clip=True),
+                norm=norm,
             )
 
             ax.set_ylim(*limits_x)
