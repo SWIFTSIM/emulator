@@ -3,12 +3,14 @@ Tests mocking procedure for generating new mock versions of
 hypercubes.
 """
 
-from swiftemulator.backend.emulator_generator import (
-    EmulatorGenerator,
+from swiftemulator import (
     ModelParameters,
     ModelSpecification,
     ModelValues,
 )
+
+from swiftemulator.emulators.gaussian_process import GaussianProcessEmulator
+
 from swiftemulator.mocking import mock_hypercube
 
 import numpy as np
@@ -58,14 +60,13 @@ def test_mock_generation_basic():
 
     model_values = ModelValues(model_values=input_model_values)
 
-    emulator_generator = EmulatorGenerator(
-        model_specification=model_spec, model_parameters=model_parameters
+    gpe = GaussianProcessEmulator()
+
+    gpe.fit_model(
+        model_specification=model_spec,
+        model_parameters=model_parameters,
+        model_values=model_values,
     )
-
-    gpe = emulator_generator.create_gaussian_process_emulator(model_values=model_values)
-
-    gpe.build_arrays()
-    gpe.fit_model()
 
     new_values, new_parameters = mock_hypercube(
         emulator=gpe,

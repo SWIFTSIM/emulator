@@ -68,10 +68,8 @@ class EmulatorGenerator(object):
             The built and trained emulator ready for prediction steps.
         """
 
-        return GaussianProcessEmulator(
-            model_specification=self.model_specification,
-            model_parameters=self.model_parameters,
-            model_values=model_values,
+        raise NotImplementedError(
+            "This class has been deprecated. Please directly construct emualtors instead."
         )
 
     def create_gaussian_process_emulator_mcmc(
@@ -95,10 +93,8 @@ class EmulatorGenerator(object):
             The built emulator ready for analysis of hyperparameters
         """
 
-        return GaussianProcessEmulatorMCMC(
-            model_specification=self.model_specification,
-            model_parameters=self.model_parameters,
-            model_values=model_values,
+        raise NotImplementedError(
+            "This class has been deprecated. Please directly construct emualtors instead."
         )
 
     def create_gaussian_process_emulator_bins(
@@ -121,10 +117,8 @@ class EmulatorGenerator(object):
             The built emulator ready for analysis of hyperparameters
         """
 
-        return GaussianProcessEmulatorBins(
-            model_specification=self.model_specification,
-            model_parameters=self.model_parameters,
-            model_values=model_values,
+        raise NotImplementedError(
+            "This class has been deprecated. Please directly construct emualtors instead."
         )
 
     def create_linear_model_emulator(
@@ -148,8 +142,6 @@ class EmulatorGenerator(object):
             The built and trained emulator ready for prediction steps.
         """
 
-        return LinearModelEmulator(
-            model_specification=self.model_specification,
-            model_parameters=self.model_parameters,
-            model_values=model_values,
+        raise NotImplementedError(
+            "This class has been deprecated. Please directly construct emualtors instead."
         )
