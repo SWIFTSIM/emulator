@@ -63,7 +63,7 @@ def visualise_penalties_mean(
         parameters in the ``model_specification`` are used.
 
     use_colorbar: Bool, optional
-        Include a colorbar?
+        Include a colorbar? Default: True
 
     Returns
     -------
@@ -87,7 +87,7 @@ def visualise_penalties_mean(
 
     if figsize is None:
         if use_colorbar:
-            figsize = (7.0, 7.75)
+            figsize = (7.0, 7.4)
         else:
             figsize = (7.0, 7.0)
 
@@ -131,8 +131,8 @@ def visualise_penalties_mean(
 
     smoothing_lengths = np.ones_like(ordered_penalties) * visualisation_size
 
-    for parameter_x, axes_column in zip(parameter_ordering, axes_grid):
-        for parameter_y, ax in zip(parameter_ordering, axes_column):
+    for parameter_x, axes_column in zip(parameter_indices, axes_grid):
+        for parameter_y, ax in zip(parameter_indices, axes_column):
             limits_x = model_specification.parameter_limits[parameter_x]
             limits_y = model_specification.parameter_limits[parameter_y]
             name_x = model_specification.parameter_printable_names[parameter_x]
@@ -269,7 +269,7 @@ def visualise_penalties_generic_statistic(
         parameters in the ``model_specification`` are used.
 
     use_colorbar: Bool, optional
-        Include a colorbar?
+        Include a colorbar? Default: True.
 
 
     Returns
@@ -294,7 +294,7 @@ def visualise_penalties_generic_statistic(
 
     if figsize is None:
         if use_colorbar:
-            figsize = (7.0, 7.75)
+            figsize = (7.0, 7.4)
         else:
             figsize = (7.0, 7.0)
 
