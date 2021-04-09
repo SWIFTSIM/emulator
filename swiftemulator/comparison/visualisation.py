@@ -25,6 +25,7 @@ def visualise_penalties_mean(
     norm: Normalize = Normalize(vmin=0.2, vmax=0.7, clip=True),
     remove_ticks: bool = True,
     figsize: Tuple[float] = (7.0, 7.0),
+    use_parameters: Optional[Iterable[str]] = None,
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
     """
     Visualises the penalties using SPH smoothing for each
@@ -56,6 +57,10 @@ def visualise_penalties_mean(
         The figure size to use. Defaults to 7 inches by 7 inches, the
         size for a ``figure*`` in the MNRAS template.
 
+    use_parameters: Iterable[str], optional
+        The parameters to include in the figure. If not provided, all
+        parameters in the ``model_specification`` are used.
+
 
     Returns
     -------
@@ -74,7 +79,14 @@ def visualise_penalties_mean(
     ``matplotlib`` stylesheet you are currently using.
     """
 
-    number_of_parameters = model_specification.number_of_parameters
+    if use_parameters is None:
+        use_parameters = tuple(model_specification.parameter_names)
+
+    parameter_indices = [
+        model_specification.parameter_names.index(x) for x in use_parameters
+    ]
+
+    number_of_parameters = len(use_parameters)
     grid_size = number_of_parameters
 
     fig, axes_grid = plt.subplots(
@@ -105,13 +117,13 @@ def visualise_penalties_mean(
             - limits[index][0]
         )
         / (limits[index][1] - limits[index][0])
-        for index, parameter in enumerate(model_specification.parameter_names)
+        for index, parameter in zip(parameter_indices, use_parameters)
     ]
 
     smoothing_lengths = np.ones_like(ordered_penalties) * visualisation_size
 
-    for parameter_x, axes_column in enumerate(axes_grid):
-        for parameter_y, ax in enumerate(axes_column):
+    for parameter_x, axes_column in zip(parameter_ordering, axes_grid):
+        for parameter_y, ax in zip(parameter_ordering, axes_column):
             limits_x = model_specification.parameter_limits[parameter_x]
             limits_y = model_specification.parameter_limits[parameter_y]
             name_x = model_specification.parameter_printable_names[parameter_x]
@@ -198,6 +210,7 @@ def visualise_penalties_generic_statistic(
     norm: Normalize = Normalize(vmin=0.2, vmax=0.7, clip=True),
     remove_ticks: bool = True,
     figsize: Tuple[float] = (7.0, 7.0),
+    use_parameters: Optional[Iterable[str]] = None,
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
     """
     Visualises the penalties using basic binning.
@@ -233,6 +246,11 @@ def visualise_penalties_generic_statistic(
         The figure size to use. Defaults to 7 inches by 7 inches, the
         size for a ``figure*`` in the MNRAS template.
 
+    use_parameters: Iterable[str], optional
+        The parameters to include in the figure. If not provided, all
+        parameters in the ``model_specification`` are used.
+
+
     Returns
     -------
 
@@ -250,8 +268,14 @@ def visualise_penalties_generic_statistic(
     ``matplotlib`` stylesheet you are currently using.
     """
 
-    number_of_parameters = model_specification.number_of_parameters
-    grid_size = number_of_parameters
+    if use_parameters is None:
+        use_parameters = tuple(model_specification.parameter_names)
+
+    parameter_indices = [
+        model_specification.parameter_names.index(x) for x in use_parameters
+    ]
+
+    number_of_parameters = len(use_parameters)
 
     fig, axes_grid = plt.subplots(
         grid_size,
@@ -281,15 +305,15 @@ def visualise_penalties_generic_statistic(
             - limits[index][0]
         )
         / (limits[index][1] - limits[index][0])
-        for index, parameter in enumerate(model_specification.parameter_names)
+        for index, parameter in zip(parameter_indices, use_parameters)
     ]
 
     bins = np.linspace(0.0, 1.0, int(round(1.0 / visualisation_size)))
 
     statistic = statistic if statistic is not None else "mean"
 
-    for parameter_x, axes_column in enumerate(axes_grid):
-        for parameter_y, ax in enumerate(axes_column):
+    for parameter_x, axes_column in zip(parameter_indices, axes_grid):
+        for parameter_y, ax in zip(parameter_indices, axes_column):
             limits_x = model_specification.parameter_limits[parameter_x]
             limits_y = model_specification.parameter_limits[parameter_y]
             name_x = model_specification.parameter_printable_names[parameter_x]
