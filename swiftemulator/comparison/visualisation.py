@@ -24,8 +24,9 @@ def visualise_penalties_mean(
     penalties: Dict[Hashable, float],
     norm: Normalize = Normalize(vmin=0.2, vmax=0.7, clip=True),
     remove_ticks: bool = True,
-    figsize: Tuple[float] = (7.0, 7.0),
+    figsize: Optional[Tuple[float]] = None,
     use_parameters: Optional[Iterable[str]] = None,
+    use_colorbar: Optional[bool] = True,
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
     """
     Visualises the penalties using SPH smoothing for each
@@ -61,6 +62,8 @@ def visualise_penalties_mean(
         The parameters to include in the figure. If not provided, all
         parameters in the ``model_specification`` are used.
 
+    use_colorbar: Bool, optional
+        Include a colorbar?
 
     Returns
     -------
@@ -81,6 +84,12 @@ def visualise_penalties_mean(
 
     if use_parameters is None:
         use_parameters = tuple(model_specification.parameter_names)
+
+    if figsize is None:
+        if use_colorbar:
+            figsize = (7.0, 7.75)
+        else:
+            figsize = (7.0, 7.0)
 
     parameter_indices = [
         model_specification.parameter_names.index(x) for x in use_parameters
@@ -194,6 +203,14 @@ def visualise_penalties_mean(
             # Set square in data reference frame
             ax.set_aspect(1.0 / ax.get_data_ratio())
 
+    if use_colorbar:
+        fig.colorbar(
+            im,
+            ax=axes_grid.ravel().tolist(),
+            orientation="horizontal",
+            label="Mean penalty along line of sight",
+        )
+
     for a in axes_grid[:-1, :].flat:
         a.set_xlabel(None)
     for a in axes_grid[:, 1:].flat:
@@ -209,8 +226,9 @@ def visualise_penalties_generic_statistic(
     statistic: Optional[str] = None,
     norm: Normalize = Normalize(vmin=0.2, vmax=0.7, clip=True),
     remove_ticks: bool = True,
-    figsize: Tuple[float] = (7.0, 7.0),
+    figsize: Optional[Tuple[float]] = None,
     use_parameters: Optional[Iterable[str]] = None,
+    use_colorbar: Optional[bool] = True,
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
     """
     Visualises the penalties using basic binning.
@@ -250,6 +268,9 @@ def visualise_penalties_generic_statistic(
         The parameters to include in the figure. If not provided, all
         parameters in the ``model_specification`` are used.
 
+    use_colorbar: Bool, optional
+        Include a colorbar?
+
 
     Returns
     -------
@@ -270,6 +291,12 @@ def visualise_penalties_generic_statistic(
 
     if use_parameters is None:
         use_parameters = tuple(model_specification.parameter_names)
+
+    if figsize is None:
+        if use_colorbar:
+            figsize = (7.0, 7.75)
+        else:
+            figsize = (7.0, 7.0)
 
     parameter_indices = [
         model_specification.parameter_names.index(x) for x in use_parameters
@@ -372,6 +399,14 @@ def visualise_penalties_generic_statistic(
 
             # Set square in data reference frame
             ax.set_aspect(1.0 / ax.get_data_ratio())
+
+    if use_colorbar:
+        fig.colorbar(
+            im,
+            ax=axes_grid.ravel().tolist(),
+            orientation="horizontal",
+            label=f"{statistic.capitalize()} penalty along line of sight",
+        )
 
     for a in axes_grid[:-1, :].flat:
         a.set_xlabel(None)
