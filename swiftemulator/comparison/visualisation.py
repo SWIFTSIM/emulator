@@ -9,7 +9,7 @@ from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
 
-from typing import Dict, Hashable, Tuple, Iterable
+from typing import Dict, Hashable, Tuple, Iterable, Optional
 from matplotlib.colors import Normalize
 from swiftsimio.visualisation.projection import scatter
 from scipy.stats import binned_statistic_2d
