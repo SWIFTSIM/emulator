@@ -26,7 +26,8 @@ def visualise_penalties_mean(
     remove_ticks: bool = True,
     figsize: Optional[Tuple[float]] = None,
     use_parameters: Optional[Iterable[str]] = None,
-    use_colorbar: Optional[bool] = True,
+    use_colorbar: Optional[bool] = False,
+    highlight_model: Optional[Hashable] = None,
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
     """
     Visualises the penalties using SPH smoothing for each
@@ -63,7 +64,11 @@ def visualise_penalties_mean(
         parameters in the ``model_specification`` are used.
 
     use_colorbar: Bool, optional
-        Include a colorbar? Default: True
+        Include a colorbar? Default: False
+
+    highlight_model: Hashable, optional
+        The model unique ID to highlight. If not provided, no model is
+        highlighted.
 
     Returns
     -------
@@ -109,6 +114,9 @@ def visualise_penalties_mean(
 
     visualisation_size = 2.0 / np.sqrt(len(model_parameters))
     simulation_ordering = list(model_parameters.keys())
+
+    if highlight_model is not None:
+        highlight_index = simulation_ordering.index(highlight_model)
 
     # Build temporary 1D arrays of parameters/offsets in correct ordering
     ordered_penalties = np.array([penalties[x] for x in simulation_ordering])
@@ -170,6 +178,14 @@ def visualise_penalties_mean(
                     rasterized=True,
                 )
 
+                if highlight_model is not None:
+                    ax.scatter(
+                        ordered_parameters[parameter_y][highlight_index],
+                        ordered_parameters[parameter_x][highlight_index],
+                        color="white",
+                        edgecolor="black",
+                    )
+
                 ax.set_ylim(*limits_x)
                 ax.set_xlim(*limits_y)
 
@@ -228,7 +244,8 @@ def visualise_penalties_generic_statistic(
     remove_ticks: bool = True,
     figsize: Optional[Tuple[float]] = None,
     use_parameters: Optional[Iterable[str]] = None,
-    use_colorbar: Optional[bool] = True,
+    use_colorbar: Optional[bool] = False,
+    highlight_model: Optional[Hashable] = None,
 ) -> Tuple[plt.Figure, Iterable[plt.Axes]]:
     """
     Visualises the penalties using basic binning.
@@ -269,7 +286,11 @@ def visualise_penalties_generic_statistic(
         parameters in the ``model_specification`` are used.
 
     use_colorbar: Bool, optional
-        Include a colorbar? Default: True.
+        Include a colorbar? Default: False.
+
+    highlight_model: Hashable, optional
+        The model unique ID to highlight. If not provided, no model is
+        highlighted.
 
 
     Returns
@@ -316,6 +337,9 @@ def visualise_penalties_generic_statistic(
 
     visualisation_size = 4.0 / np.sqrt(len(model_parameters))
     simulation_ordering = list(model_parameters.keys())
+
+    if highlight_model is not None:
+        highlight_index = simulation_ordering.index(highlight_model)
 
     # Build temporary 1D arrays of parameters/offsets in correct ordering
     ordered_penalties = np.array([penalties[x] for x in simulation_ordering])
@@ -366,6 +390,14 @@ def visualise_penalties_generic_statistic(
                     norm=norm,
                     rasterized=True,
                 )
+
+                if highlight_model is not None:
+                    ax.scatter(
+                        ordered_parameters[parameter_y][highlight_index],
+                        ordered_parameters[parameter_x][highlight_index],
+                        color="white",
+                        edgecolor="black",
+                    )
 
                 ax.set_ylim(*limits_x)
                 ax.set_xlim(*limits_y)
