@@ -8,6 +8,7 @@ import attr
 import numpy as np
 import matplotlib.pyplot as plt
 import corner
+import yaml
 
 
 from sklearn.neighbors import KDTree
