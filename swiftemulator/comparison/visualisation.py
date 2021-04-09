@@ -117,37 +117,39 @@ def visualise_penalties_mean(
             name_x = model_specification.parameter_printable_names[parameter_x]
             name_y = model_specification.parameter_printable_names[parameter_y]
 
-            norm_grid = scatter(
-                x=ordered_parameters[parameter_x],
-                y=ordered_parameters[parameter_y],
-                m=np.ones_like(ordered_penalties),
-                h=smoothing_lengths,
-                res=512,
-            )
+            is_center_line = parameter_x == parameter_y
+            do_not_plot = is_center_line and remove_ticks
 
-            weighted_grid = scatter(
-                x=ordered_parameters[parameter_x],
-                y=ordered_parameters[parameter_y],
-                m=ordered_penalties,
-                h=smoothing_lengths,
-                res=512,
-            )
+            if not do_not_plot:
+                norm_grid = scatter(
+                    x=ordered_parameters[parameter_x],
+                    y=ordered_parameters[parameter_y],
+                    m=np.ones_like(ordered_penalties),
+                    h=smoothing_lengths,
+                    res=512,
+                )
 
-            norm_grid[norm_grid == 0.0] = 1.0
+                weighted_grid = scatter(
+                    x=ordered_parameters[parameter_x],
+                    y=ordered_parameters[parameter_y],
+                    m=ordered_penalties,
+                    h=smoothing_lengths,
+                    res=512,
+                )
 
-            ratio_grid = weighted_grid / norm_grid
+                norm_grid[norm_grid == 0.0] = 1.0
 
-            im = ax.imshow(
-                ratio_grid,
-                extent=limits_y + limits_x,
-                origin="lower",
-                norm=norm,
-            )
+                ratio_grid = weighted_grid / norm_grid
 
-            ax.set_ylim(*limits_x)
-            ax.set_xlim(*limits_y)
-            ax.set_ylabel(name_x)
-            ax.set_xlabel(name_y)
+                im = ax.imshow(
+                    ratio_grid,
+                    extent=limits_y + limits_x,
+                    origin="lower",
+                    norm=norm,
+                )
+
+                ax.set_ylim(*limits_x)
+                ax.set_xlim(*limits_y)
 
             if remove_ticks:
                 ax.tick_params(
@@ -162,6 +164,17 @@ def visualise_penalties_mean(
                     labelright=False,
                     labeltop=False,
                 )
+                if is_center_line:
+                    ax.text(
+                        0.5,
+                        0.5,
+                        f"{limits_x[0]:3.3f} < {name_x} < {limits_x[1]:3.3f}",
+                        transform=ax.transAxes,
+                    )
+
+            else:
+                ax.set_ylabel(name_x)
+                ax.set_xlabel(name_y)
 
             # Set square in data reference frame
             ax.set_aspect(1.0 / ax.get_data_ratio())
@@ -279,25 +292,27 @@ def visualise_penalties_generic_statistic(
             name_x = model_specification.parameter_printable_names[parameter_x]
             name_y = model_specification.parameter_printable_names[parameter_y]
 
-            grid, *_ = binned_statistic_2d(
-                x=ordered_parameters[parameter_x],
-                y=ordered_parameters[parameter_y],
-                values=ordered_penalties,
-                statistic=statistic,
-                bins=bins,
-            )
+            is_center_line = parameter_x == parameter_y
+            do_not_plot = is_center_line and remove_ticks
 
-            im = ax.imshow(
-                grid,
-                extent=limits_y + limits_x,
-                origin="lower",
-                norm=norm,
-            )
+            if not do_not_plot:
+                grid, *_ = binned_statistic_2d(
+                    x=ordered_parameters[parameter_x],
+                    y=ordered_parameters[parameter_y],
+                    values=ordered_penalties,
+                    statistic=statistic,
+                    bins=bins,
+                )
 
-            ax.set_ylim(*limits_x)
-            ax.set_xlim(*limits_y)
-            ax.set_ylabel(name_x)
-            ax.set_xlabel(name_y)
+                im = ax.imshow(
+                    grid,
+                    extent=limits_y + limits_x,
+                    origin="lower",
+                    norm=norm,
+                )
+
+                ax.set_ylim(*limits_x)
+                ax.set_xlim(*limits_y)
 
             if remove_ticks:
                 ax.tick_params(
@@ -312,6 +327,17 @@ def visualise_penalties_generic_statistic(
                     labelright=False,
                     labeltop=False,
                 )
+
+                if is_center_line:
+                    ax.text(
+                        0.5,
+                        0.5,
+                        f"{limits_x[0]:3.3f} < {name_x} < {limits_x[1]:3.3f}",
+                        transform=ax.transAxes,
+                    )
+            else:
+                ax.set_ylabel(name_x)
+                ax.set_xlabel(name_y)
 
             # Set square in data reference frame
             ax.set_aspect(1.0 / ax.get_data_ratio())
