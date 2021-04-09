@@ -200,3 +200,51 @@ class ModelParameters(object):
             plt.show()
         else:
             plt.savefig(filename)
+
+    def to_yaml(self, filename: Path):
+        """
+        Write the model parameters to a YAML file.
+
+        Parameters
+        ----------
+
+        filename: Path
+            The path to write the file to. This should be a `Path` object,
+            but if it is a string it will be automatically converted.
+
+        """
+
+        filename = Path(filename)
+
+        with open(filename, "w") as handle:
+            yaml.dump(self.model_parameters, stream=handle)
+
+        return
+
+    @classmethod
+    def from_yaml(cls, filename: Path) -> "ModelParameters":
+        """
+        Generate an instance of :class:`ModelParameters` from a YAML file,
+        written to disk using `to_yaml`.
+
+        Parameters
+        ----------
+
+        filename: Path
+            The path to read the file from. This should be a `Path` object,
+            but if it is a string it will be automatically converted.
+
+        Returns
+        -------
+
+        model_parameters: ModelParameters
+            Instance of `ModelParameters` restored from disk.
+
+        """
+
+        filename = Path(filename)
+
+        with open(filename, "r") as handle:
+            raw_values = dict(yaml.load(stream=handle, Loader=yaml.FullLoader))
+
+        return cls(model_parameters=raw_values)
