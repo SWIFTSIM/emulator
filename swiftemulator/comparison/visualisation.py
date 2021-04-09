@@ -169,8 +169,10 @@ def visualise_penalties_mean(
                     ax.text(
                         0.5,
                         0.5,
-                        f"{limits_x[0]:3.3f} < {name_x} < {limits_x[1]:3.3f}",
+                        f"{limits_x[0]:3.3f} <\n{name_x}\n< {limits_x[1]:3.3f}",
                         transform=ax.transAxes,
+                        ha="center",
+                        va="center",
                     )
 
             else:
@@ -334,8 +336,10 @@ def visualise_penalties_generic_statistic(
                     ax.text(
                         0.5,
                         0.5,
-                        f"{limits_x[0]:3.3f} < {name_x} < {limits_x[1]:3.3f}",
+                        f"{limits_x[0]:3.3f} <\n{name_x}\n< {limits_x[1]:3.3f}",
                         transform=ax.transAxes,
+                        ha="center",
+                        va="center",
                     )
             else:
                 ax.set_ylabel(name_x)
