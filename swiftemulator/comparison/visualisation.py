@@ -280,8 +280,8 @@ def visualise_penalties_generic_statistic(
             name_y = model_specification.parameter_printable_names[parameter_y]
 
             grid = binned_statistic_2d(
-                x=ordered_parameters[name_x],
-                y=ordered_parameters[name_y],
+                x=ordered_parameters[parameter_x],
+                y=ordered_parameters[parameter_y],
                 values=ordered_penalties,
                 statistic=statistic,
                 bins=bins,
