@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import corner
 import yaml
+import json
 
 
 from sklearn.neighbors import KDTree
@@ -226,20 +227,20 @@ class ModelParameters(object):
     def from_yaml(cls, filename: Path) -> "ModelParameters":
         """
         Generate an instance of :class:`ModelParameters` from a YAML file,
-        written to disk using `to_yaml`.
+        written to disk using ``to_yaml``.
 
         Parameters
         ----------
 
         filename: Path
-            The path to read the file from. This should be a `Path` object,
+            The path to read the file from. This should be a ``Path`` object,
             but if it is a string it will be automatically converted.
 
         Returns
         -------
 
         model_parameters: ModelParameters
-            Instance of `ModelParameters` restored from disk.
+            Instance of ``ModelParameters`` restored from disk.
 
         """
 
@@ -247,5 +248,54 @@ class ModelParameters(object):
 
         with open(filename, "r") as handle:
             raw_values = dict(yaml.load(stream=handle, Loader=yaml.FullLoader))
+
+        return cls(model_parameters=raw_values)
+
+    def to_json(self, filename: Path):
+        """
+        Write the model parameters to a JSON file. Preferred over YAML
+        as this is much faster for large datasets.
+
+        Parameters
+        ----------
+
+        filename: Path
+            The path to write the file to. This should be a `Path` object,
+            but if it is a string it will be automatically converted.
+
+        """
+
+        filename = Path(filename)
+
+        with open(filename, "w") as handle:
+            json.dump(self.model_parameters, handle)
+
+        return
+
+    @classmethod
+    def from_json(cls, filename: Path) -> "ModelParameters":
+        """
+        Generate an instance of :class:`ModelParameters` from a JSON file,
+        written to disk using ``to_json``.
+
+        Parameters
+        ----------
+
+        filename: Path
+            The path to read the file from. This should be a ``Path`` object,
+            but if it is a string it will be automatically converted.
+
+        Returns
+        -------
+
+        model_parameters: ModelParameters
+            Instance of ``ModelParameters`` restored from disk.
+
+        """
+
+        filename = Path(filename)
+
+        with open(filename, "r") as handle:
+            raw_values = dict(json.load(handle))
 
         return cls(model_parameters=raw_values)

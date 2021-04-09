@@ -6,6 +6,7 @@ describes the set of scaling relations present.
 import attr
 import numpy as np
 import yaml
+import json
 
 from typing import Dict, Optional, Hashable
 from pathlib import Path
@@ -160,6 +161,74 @@ class ModelValues(object):
 
         with open(filename, "r") as handle:
             raw_values = dict(yaml.load(stream=handle, Loader=yaml.FullLoader))
+
+        # Now need to re-numpify
+
+        numpyify = lambda x: {
+            k: (np.array(v) if isinstance(v, list) else v) for k, v in x.items()
+        }
+
+        model_value_numpy = {uid: numpyify(model) for uid, model in raw_values.items()}
+
+        return cls(model_values=model_value_numpy)
+
+    def to_json(self, filename: Path):
+        """
+        Write the model values to a JSON file. Preferred to YAML as this
+        is much faster for large datsets.
+
+        Parameters
+        ----------
+
+        filename: Path
+            The path to write the file to. This should be a `Path` object,
+            but if it is a string it will be automatically converted.
+
+        """
+
+        filename = Path(filename)
+
+        # We must first construct a version of `model_values` that uses lists instead
+        # of numpy arrays - yaml doesn't like that!
+
+        listify = lambda x: {
+            k: (v.tolist() if isinstance(v, np.ndarray) else v) for k, v in x.items()
+        }
+
+        model_value_no_numpy = {
+            uid: listify(model) for uid, model in self.model_values.items()
+        }
+
+        with open(filename, "w") as handle:
+            json.dump(model_value_no_numpy, handle)
+
+        return
+
+    @classmethod
+    def from_json(cls, filename: Path) -> "ModelValues":
+        """
+        Generate an instance of :class:`ModelValues` from a JSON file,
+        written to disk using ``to_json``.
+
+        Parameters
+        ----------
+
+        filename: Path
+            The path to read the file from. This should be a `Path` object,
+            but if it is a string it will be automatically converted.
+
+        Returns
+        -------
+
+        model_values: ModelValues
+            Instance of ``ModelValues`` restored from disk.
+
+        """
+
+        filename = Path(filename)
+
+        with open(filename, "r") as handle:
+            raw_values = dict(json.load(handle))
 
         # Now need to re-numpify
 
