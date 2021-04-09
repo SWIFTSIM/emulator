@@ -139,8 +139,8 @@ def visualise_penalties_mean(
 
     smoothing_lengths = np.ones_like(ordered_penalties) * visualisation_size
 
-    for parameter_x, axes_column in zip(parameter_indices, axes_grid):
-        for parameter_y, ax in zip(parameter_indices, axes_column):
+    for parameter_y, axes_column in zip(parameter_indices, axes_grid):
+        for parameter_x, ax in zip(parameter_indices, axes_column):
             limits_x = model_specification.parameter_limits[parameter_x]
             limits_y = model_specification.parameter_limits[parameter_y]
             name_x = model_specification.parameter_printable_names[parameter_x]
@@ -172,22 +172,32 @@ def visualise_penalties_mean(
 
                 im = ax.imshow(
                     ratio_grid,
-                    extent=limits_y + limits_x,
+                    extent=limits_x + limits_y,
                     origin="lower",
                     norm=norm,
                     rasterized=True,
                 )
 
                 if highlight_model is not None:
+                    highlight_x = ordered_parameters[parameter_x][highlight_index]
+                    highlight_y = ordered_parameters[parameter_y][highlight_index]
+                    
+                    # Need to re-scale from 0->1 to 'real' space
+
+                    highlight_x *= (limits_x[1] - limits_x[0])
+                    highlight_x += limits_x[0]
+
+                    highlight_y *= (limits_y[1] - limits_y[0])
+                    highlight_y += limits_y[0]
+
                     ax.scatter(
-                        ordered_parameters[parameter_y][highlight_index],
-                        ordered_parameters[parameter_x][highlight_index],
+                        highlight_x, highlight_y,
                         color="white",
                         edgecolor="black",
                     )
 
-                ax.set_ylim(*limits_x)
-                ax.set_xlim(*limits_y)
+                ax.set_xlim(*limits_x)
+                ax.set_ylim(*limits_y)
 
             if remove_ticks:
                 ax.tick_params(
@@ -213,8 +223,8 @@ def visualise_penalties_mean(
                     )
 
             else:
-                ax.set_ylabel(name_x)
-                ax.set_xlabel(name_y)
+                ax.set_xlabel(name_x)
+                ax.set_ylabel(name_y)
 
             # Set square in data reference frame
             ax.set_aspect(1.0 / ax.get_data_ratio())
@@ -345,27 +355,23 @@ def visualise_penalties_generic_statistic(
     ordered_penalties = np.array([penalties[x] for x in simulation_ordering])
 
     limits = model_specification.parameter_limits
-    # Parameters must be re-scaled to the range [0,1] for projection.
+
     ordered_parameters = [
-        (
-            np.array(
-                [
-                    model_parameters.model_parameters[x][parameter]
-                    for x in simulation_ordering
-                ]
-            )
-            - limits[index][0]
+        np.array(
+            [
+                model_parameters.model_parameters[x][parameter]
+                for x in simulation_ordering
+            ]
         )
-        / (limits[index][1] - limits[index][0])
         for index, parameter in zip(parameter_indices, use_parameters)
     ]
 
-    bins = np.linspace(0.0, 1.0, int(round(1.0 / visualisation_size)))
+    bins = int(round(1.0 / visualisation_size))
 
     statistic = statistic if statistic is not None else "mean"
 
-    for parameter_x, axes_column in zip(parameter_indices, axes_grid):
-        for parameter_y, ax in zip(parameter_indices, axes_column):
+    for parameter_y, axes_column in zip(parameter_indices, axes_grid):
+        for parameter_x, ax in zip(parameter_indices, axes_column):
             limits_x = model_specification.parameter_limits[parameter_x]
             limits_y = model_specification.parameter_limits[parameter_y]
             name_x = model_specification.parameter_printable_names[parameter_x]
@@ -375,7 +381,7 @@ def visualise_penalties_generic_statistic(
             do_not_plot = is_center_line and remove_ticks
 
             if not do_not_plot:
-                grid, *_ = binned_statistic_2d(
+                grid, xs, ys, _ = binned_statistic_2d(
                     x=ordered_parameters[parameter_x],
                     y=ordered_parameters[parameter_y],
                     values=ordered_penalties,
@@ -383,24 +389,25 @@ def visualise_penalties_generic_statistic(
                     bins=bins,
                 )
 
-                im = ax.imshow(
+                im = ax.pcolormesh(
+                    xs, ys,
                     grid,
-                    extent=limits_y + limits_x,
-                    origin="lower",
                     norm=norm,
                     rasterized=True,
                 )
 
                 if highlight_model is not None:
+                    highlight_x = ordered_parameters[parameter_x][highlight_index]
+                    highlight_y = ordered_parameters[parameter_y][highlight_index]
+                    
                     ax.scatter(
-                        ordered_parameters[parameter_y][highlight_index],
-                        ordered_parameters[parameter_x][highlight_index],
+                        highlight_x, highlight_y,
                         color="white",
                         edgecolor="black",
                     )
 
-                ax.set_ylim(*limits_x)
-                ax.set_xlim(*limits_y)
+                ax.set_xlim(*limits_x)
+                ax.set_ylim(*limits_y)
 
             if remove_ticks:
                 ax.tick_params(
@@ -426,8 +433,8 @@ def visualise_penalties_generic_statistic(
                         va="center",
                     )
             else:
-                ax.set_ylabel(name_x)
-                ax.set_xlabel(name_y)
+                ax.set_xlabel(name_x)
+                ax.set_ylabel(name_y)
 
             # Set square in data reference frame
             ax.set_aspect(1.0 / ax.get_data_ratio())
