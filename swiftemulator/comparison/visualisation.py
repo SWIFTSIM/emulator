@@ -268,7 +268,7 @@ def visualise_penalties_generic_statistic(
         for index, parameter in enumerate(model_specification.parameter_names)
     ]
 
-    bins = np.linspace(0.0, 1.0, 1.0 / visualisation_size)
+    bins = np.linspace(0.0, 1.0, int(round(1.0 / visualisation_size)))
 
     statistic = statistic if statistic is not None else "mean"
 
