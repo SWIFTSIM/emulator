@@ -146,6 +146,7 @@ def visualise_penalties_mean(
                     extent=limits_y + limits_x,
                     origin="lower",
                     norm=norm,
+                    rasterized=True,
                 )
 
                 ax.set_ylim(*limits_x)
@@ -309,6 +310,7 @@ def visualise_penalties_generic_statistic(
                     extent=limits_y + limits_x,
                     origin="lower",
                     norm=norm,
+                    rasterized=True,
                 )
 
                 ax.set_ylim(*limits_x)
