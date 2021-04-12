@@ -139,8 +139,8 @@ def visualise_penalties_mean(
 
     smoothing_lengths = np.ones_like(ordered_penalties) * visualisation_size
 
-    for parameter_y, axes_column in zip(parameter_indices, axes_grid):
-        for parameter_x, ax in zip(parameter_indices, axes_column):
+    for parameter_x, axes_column in zip(parameter_indices, axes_grid):
+        for parameter_y, ax in zip(parameter_indices, axes_column):
             limits_x = model_specification.parameter_limits[parameter_x]
             limits_y = model_specification.parameter_limits[parameter_y]
             name_x = model_specification.parameter_printable_names[parameter_x]
@@ -181,17 +181,18 @@ def visualise_penalties_mean(
                 if highlight_model is not None:
                     highlight_x = ordered_parameters[parameter_x][highlight_index]
                     highlight_y = ordered_parameters[parameter_y][highlight_index]
-                    
+
                     # Need to re-scale from 0->1 to 'real' space
 
-                    highlight_x *= (limits_x[1] - limits_x[0])
+                    highlight_x *= limits_x[1] - limits_x[0]
                     highlight_x += limits_x[0]
 
-                    highlight_y *= (limits_y[1] - limits_y[0])
+                    highlight_y *= limits_y[1] - limits_y[0]
                     highlight_y += limits_y[0]
 
                     ax.scatter(
-                        highlight_x, highlight_y,
+                        highlight_x,
+                        highlight_y,
                         color="white",
                         edgecolor="black",
                     )
@@ -370,6 +371,8 @@ def visualise_penalties_generic_statistic(
 
     statistic = statistic if statistic is not None else "mean"
 
+    # JB: I am 100% confident in this loop and that we are looping
+    # over the correct axes. Do not change this loop.
     for parameter_y, axes_column in zip(parameter_indices, axes_grid):
         for parameter_x, ax in zip(parameter_indices, axes_column):
             limits_x = model_specification.parameter_limits[parameter_x]
@@ -390,18 +393,23 @@ def visualise_penalties_generic_statistic(
                 )
 
                 im = ax.pcolormesh(
-                    xs, ys,
+                    xs,
+                    ys,
                     grid,
                     norm=norm,
                     rasterized=True,
                 )
 
+                # Uncomment me if you don't believe the comment above
+                # ax.text(0.5, 0.5, f"x={name_x}\ny={name_y}", transform=ax.transAxes, ha="center", va="center", color="white")
+
                 if highlight_model is not None:
                     highlight_x = ordered_parameters[parameter_x][highlight_index]
                     highlight_y = ordered_parameters[parameter_y][highlight_index]
-                    
+
                     ax.scatter(
-                        highlight_x, highlight_y,
+                        highlight_x,
+                        highlight_y,
                         color="white",
                         edgecolor="black",
                     )
