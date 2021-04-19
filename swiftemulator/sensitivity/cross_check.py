@@ -34,35 +34,37 @@ class CrossCheck(object):
     Parameters
     ----------
 
-    model_specification: ModelSpecification
-        Full instance of the model specification.
+    kernel, george.kernels
+        The ``george`` kernel to use. The GPE here uses a copy
+        of this instance. By default, this is the
+        ``ExpSquaredKernel`` in George
 
-    model_parameters: ModelParameters
-        Full instance of the model parameters.
+    mean_model, MeanModel, optional
+        A mean model conforming to the ``swiftemulator`` mean model
+        protocol (several pre-made models are available in the
+        :mod:`swiftemulator.mean_models` module).
 
-    model_values: ModelValues
-        Full instance of the model values describing
-        this individual scaling relation.
+    hide_progress: bool
+        Option to display a tqdm bar when creating the emulators,
+        Default is to hide progress bar.
     """
 
-    model_specification: ModelSpecification = attr.ib(
-        validator=attr.validators.instance_of(ModelSpecification)
-    )
-    model_parameters: ModelParameters = attr.ib(
-        validator=attr.validators.instance_of(ModelParameters)
-    )
-    model_values: ModelValues = attr.ib(
-        validator=attr.validators.instance_of(ModelValues)
-    )
+    kernel: Optional[george.kernels.Kernel] = attr.ib(default=None)
+    mean_model: Optional[MeanModel] = attr.ib(default=None)
+    hide_progress: bool = attr.ib(default=True)
+
+    model_specification: ModelSpecification
+    model_parameters: ModelParameters
+    model_values: ModelValues
 
     leave_out_order: Optional[List[int]] = None
     cross_emulators: Optional[Dict[Hashable, george.GP]] = None
 
     def build_emulators(
         self,
-        kernel=None,
-        mean_model: Optional[MeanModel] = None,
-        hide_progress: bool = True,
+        model_specification: ModelSpecification,
+        model_parameters: ModelParameters,
+        model_values: ModelValues,
     ):
         """
         Build a dictonary with an emulator for each simulation
@@ -70,43 +72,41 @@ class CrossCheck(object):
 
         Note: this can take a long time
 
+
         Parameters
         ----------
 
-        kernel, george.kernels
-            The ``george`` kernel to use. The GPE here uses a copy
-            of this instance. By default, this is the
-            ``ExpSquaredKernel`` in George
+        model_specification: ModelSpecification
+            Full instance of the model specification.
 
-        mean_model, MeanModel, optional
-            A mean model conforming to the ``swiftemulator`` mean model
-            protocol (several pre-made models are available in the
-            :mod:`swiftemulator.mean_models` module).
+        model_parameters: ModelParameters
+            Full instance of the model parameters.
 
-        hide_progress: bool
-            Option to display a tqdm bar when creating the emulators,
-            Default is hide progress bar
+        model_values: ModelValues
+            Full instance of the model values describing
+            this individual scaling relation.
         """
 
-        model_values = self.model_values
-        leave_out_order = list(model_values.model_values.keys())
-        self.leave_out_order = leave_out_order
+        self.model_specification = model_specification
+        self.model_parameters = model_parameters
+        self.model_values = model_values
+
+        self.leave_out_order = list(model_values.model_values.keys())
 
         emulators = {}
 
-        for unique_identifier in tqdm(self.leave_out_order, disable=hide_progress):
+        for unique_identifier in tqdm(self.leave_out_order, disable=self.hide_progress):
             left_out_data = model_values.model_values.pop(unique_identifier)
 
             emulator = GaussianProcessEmulator(
-                model_specification=self.model_specification,
-                model_parameters=self.model_parameters,
-                model_values=model_values,
+                kernel=self.kernel,
+                mean_model=self.mean_model,
             )
 
-            emulator.build_arrays()
             emulator.fit_model(
-                kernel=kernel,
-                mean_model=mean_model,
+                model_specification=model_specification,
+                model_parameters=model_parameters,
+                model_values=model_values,
             )
 
             emulators[unique_identifier] = emulator
@@ -116,6 +116,96 @@ class CrossCheck(object):
         self.cross_emulators = emulators
 
         return
+
+    def build_mocked_model_values_original_independent(self) -> ModelValues:
+        """ "
+        Builds a mocked :class:`ModelValues` container, using the cross
+        emulators. The emulators are evaluated at the same independent
+        variables that were 'left out'.
+
+        Returns
+        -------
+
+        model_values: ModelValues
+            The model values container with each leave-one-out
+            scaling relation predicted. This is also set as
+            ``cross_model_values``.
+        """
+
+        if self.cross_emulators is None:
+            raise AttributeError(
+                "You need to build the emulators before the prediction step."
+            )
+
+        cross_model_values = {}
+
+        for unique_identifier in self.model_values.keys():
+            independent = self.model_values[unique_identifier]["independent"]
+
+            emulated, emulated_error = self.cross_emulators[
+                unique_identifier
+            ].predict_values(
+                independent,
+                model_parameters=self.model_parameters[unique_identifier],
+            )
+
+            cross_model_values[unique_identifier] = {
+                "independent": independent,
+                "dependent": emulated,
+                "dependent_error": np.sqrt(emulated_error),
+            }
+
+        cross_model_values = ModelValues(cross_model_values)
+
+        return cross_model_values
+
+    def build_mocked_model_values(self, emulate_at: np.array) -> ModelValues:
+        """
+        Builds a mocked :class:`ModelValues` container, using the cross
+        emulators. Similar to ``build_mocked_model_value_original_independent``
+        but evaluates all emulators at a consistent set of independent
+        variables.
+
+        Parameters
+        ----------
+
+        emulate_at: np.array
+            independent array where the emulator is evaluated.
+
+        Returns
+        -------
+
+        model_values: ModelValues
+            The model values container with each leave-one-out
+            scaling relation predicted. This is also set as
+            ``cross_model_values``.
+
+        """
+
+        if self.cross_emulators is None:
+            raise AttributeError(
+                "You need to build the emulators before the prediction step."
+            )
+
+        cross_model_values = {}
+
+        for unique_identifier in self.model_values.keys():
+            emulated, emulated_error = self.cross_emulators[
+                unique_identifier
+            ].predict_values(
+                emulate_at,
+                model_parameters=self.model_parameters[unique_identifier],
+            )
+
+            cross_model_values[unique_identifier] = {
+                "independent": emulate_at,
+                "dependent": emulated,
+                "dependent_error": np.sqrt(emulated_error),
+            }
+
+        cross_model_values = ModelValues(cross_model_values)
+
+        return cross_model_values
 
     def plot_results(
         self,
@@ -145,22 +235,18 @@ class CrossCheck(object):
             Label for vertical axis on the resultant figure.
         """
 
+        cross_model_values = self.build_mocked_model_values(emulate_at=emulate_at)
+
         for unique_identifier in self.cross_emulators.keys():
             fig, ax = plt.subplots()
 
-            emulated, emulated_error = self.cross_emulators[
-                unique_identifier
-            ].predict_values(
-                emulate_at,
-                model_parameters=self.model_parameters.model_parameters[
-                    unique_identifier
-                ],
-            )
+            emulated = cross_model_values[unique_identifier]["dependent"]
+            emulated_error = cross_model_values[unique_identifier]["dependent_error"]
 
             ax.fill_between(
                 emulate_at,
-                emulated - np.sqrt(emulated_error),
-                emulated + np.sqrt(emulated_error),
+                emulated - emulated_error,
+                emulated + emulated_error,
                 color="C1",
                 alpha=0.3,
                 linewidth=0.0,
@@ -232,7 +318,7 @@ class CrossCheck(object):
             y_model = self.model_values.model_values[unique_identifier]["dependent"]
 
             emulated, _ = self.cross_emulators[unique_identifier].predict_values(
-                x_model,
+                independent=x_model,
                 model_parameters=self.model_parameters.model_parameters[
                     unique_identifier
                 ],

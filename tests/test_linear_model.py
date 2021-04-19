@@ -1,22 +1,22 @@
 """
-Tests the emulator generator in ``swift-emulator/backend/emulator_generator.py``
+Tests the ``LinearModelEmulator`` object.
 """
 
-from swiftemulator.sensitivity.cross_check_bins import CrossCheckBins
+from swiftemulator.emulators.linear_model import LinearModelEmulator
 
-from swiftemulator.backend.emulator_generator import (
-    ModelParameters,
-    ModelSpecification,
-    ModelValues,
-)
+from swiftemulator.backend.model_parameters import ModelParameters
+from swiftemulator.backend.model_values import ModelValues
+from swiftemulator.backend.model_specification import ModelSpecification
 
 import numpy as np
 
 
-def test_basic_emulator_generator():
+def test_linear_model():
     """
-    Basic emulator generator test.
+    A basic crash-or-not test for the Linear Model Emulator.
     """
+
+    emulator = LinearModelEmulator(lasso_model_alpha=0.0)
 
     model_spec = ModelSpecification(
         number_of_parameters=2,
@@ -50,16 +50,14 @@ def test_basic_emulator_generator():
             "dependent_error": np.random.rand(10),
         },
         2: {
-            "independent": np.arange(9),
-            "dependent": np.random.rand(9),
+            "independent": np.arange(10),
+            "dependent": np.random.rand(10),
         },
     }
 
     model_values = ModelValues(model_values=input_model_values)
 
-    cross_check_bins = CrossCheckBins()
-
-    cross_check_bins.build_emulators(
+    emulator.fit_model(
         model_specification=model_spec,
         model_parameters=model_parameters,
         model_values=model_values,

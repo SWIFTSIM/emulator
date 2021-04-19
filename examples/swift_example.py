@@ -80,7 +80,6 @@ values, units = load_pipeline_outputs(
 scaling_relation = values["stellar_mass_function_100"]
 scaling_relation_units = units["stellar_mass_function_100"]
 
-
 # We can now compare our real simulation to observational data!
 observation = load_observations(
     "./observational_data/data/GalaxyStellarMassFunction/Vernon.hdf5"
@@ -94,7 +93,6 @@ offsets = continuous_model_offset_from_observation(
 )
 
 # Need to format the data for `corner` now.
-
 fig, axes = visualise_offsets_mean(
     model_specification=spec,
     model_values=scaling_relation,
@@ -105,6 +103,11 @@ fig, axes = visualise_offsets_mean(
 fig.tight_layout(h_pad=0.05, w_pad=0.05)
 fig.savefig("real_simulation_corner_test.png")
 
+train_model = lambda x: x.fit_model(
+    model_specification=spec,
+    model_parameters=parameters,
+    model_values=scaling_relation,
+)
 
 emulator = GaussianProcessEmulator(
     model_specification=spec,
