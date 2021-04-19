@@ -199,6 +199,7 @@ class PenaltyCalculator(object):
         x_label: Optional[str] = None,
         y_label: Optional[str] = None,
         resolution: int = 128,
+        marker: Optional[str] = None,
     ):
         """
         Create a figure of the penalty function, over the limits
@@ -242,7 +243,7 @@ class PenaltyCalculator(object):
         if self.log_dependent:
             y = np.log10(y.value)
 
-        ax.plot(x, y, linestyle="dashed", marker="o")
+        ax.plot(x, y, linestyle="dashed", marker=marker)
 
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
@@ -695,12 +696,17 @@ class GaussianDataErrorsPenaltyCalculator(PenaltyCalculator):
     This penalty function uses a Gaussian distribution around
     the data, based on the observational errors. Capped at a
     input number of sigmas away from the data.
+
+    Parameters
     ----------
+
     sigma_max: Union[unyt.unyt_quantity, float]
         The number of sigmas at which the function is capped.
+
     lower: Union[unyt.unyt_quantity, float]
         The lowest independent value to calculate the model
         offset at.
+
     upper: Union[unyt.unyt_quantity, float]
         The highest independent value to calculate the model
         offset at.
@@ -755,20 +761,6 @@ class GaussianDataErrorsPenaltyCalculator(PenaltyCalculator):
         dependent: np.array,
         dependent_error: Optional[np.array] = None,
     ) -> List[float]:
-        """
-        Calculate the penalty function, relative to the observational
-        data, for this model.
-        independent: np.array
-            The independent data.
-        dependent: np.array
-            The dependent data for comparison.
-        dependent_error: np.array, optional
-            The dependent errors, for comparison.
-        Returns
-        -------
-        penalty, List[float]
-            The penalties for this model, between 0 and 1 each.
-        """
 
         valid_data_mask = np.logical_and(
             independent >= self.lower, independent < self.upper
@@ -804,15 +796,21 @@ class GaussianPercentErrorsPenaltyCalculator(PenaltyCalculator):
     Penalty calculator that that uses Gaussian errors with
     widths based on the percentages difference between the model
     and the data.
+
+    Parameters
     ----------
+
     percent_error: float
         percent error that sets the one-sigma deviation,
         in units of percent (0-100).
+
     sigma_max: float
         The number of sigmas at which the function is capped.
+
     lower: Union[unyt.unyt_quantity, float]
         The lowest independent value to calculate the model
         offset at.
+
     upper: Union[unyt.unyt_quantity, float]
         The highest independent value to calculate the model
         offset at.
@@ -840,20 +838,6 @@ class GaussianPercentErrorsPenaltyCalculator(PenaltyCalculator):
         dependent: np.array,
         dependent_error: Optional[np.array] = None,
     ) -> List[float]:
-        """
-        Calculate the penalty function, relative to the observational
-        data, for this model.
-        independent: np.array
-            The independent data.
-        dependent: np.array
-            The dependent data for comparison.
-        dependent_error: np.array, optional
-            The dependent errors, for comparison.
-        Returns
-        -------
-        penalty, List[float]
-            The penalties for this model, between 0 and 1 each.
-        """
 
         valid_data_mask = np.logical_and(
             independent >= self.lower, independent < self.upper
@@ -889,15 +873,20 @@ class GaussianDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
     This is meant as a way to not fit better then the
     emulator allows, while also not constraining stronger
     than observations.
+
+    Parameters
     ----------
+
     percent_error: float
         percent error that sets the one-sigma deviation,
         in units of percent (0-100).
+
     sigma_max: float
         The number of sigmas at which the function is capped.
     lower: Union[unyt.unyt_quantity, float]
         The lowest independent value to calculate the model
         offset at.
+
     upper: Union[unyt.unyt_quantity, float]
         The highest independent value to calculate the model
         offset at.
@@ -953,20 +942,6 @@ class GaussianDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
         dependent: np.array,
         dependent_error: Optional[np.array] = None,
     ) -> List[float]:
-        """
-        Calculate the penalty function, relative to the observational
-        data, for this model.
-        independent: np.array
-            The independent data.
-        dependent: np.array
-            The dependent data for comparison.
-        dependent_error: np.array, optional
-            The dependent errors, for comparison.
-        Returns
-        -------
-        penalty, List[float]
-            The penalties for this model, between 0 and 1 each.
-        """
 
         valid_data_mask = np.logical_and(
             independent >= self.lower, independent < self.upper
@@ -982,23 +957,16 @@ class GaussianDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
             independent[valid_data_mask]
         )
 
-        penalties_data = 1.0 - np.exp(
+        penalties = 1.0 - np.exp(
             -0.5
             * (
                 (dependent[valid_data_mask] - obs_dependent) ** 2
-                / (obs_dependent_errors ** 2)
+                / (
+                    obs_dependent_errors ** 2
+                    + (obs_dependent * (self.percent_error / 100)) ** 2
+                )
             )
         )
-
-        penalties_percent_error = 1.0 - np.exp(
-            -0.5
-            * (
-                (dependent[valid_data_mask] - obs_dependent) ** 2
-                / ((obs_dependent * (self.percent_error / 100)) ** 2)
-            )
-        )
-
-        penalties = np.minimum(penalties_data, penalties_percent_error)
 
         sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
         penalties[penalties > sigma_max_mask_value] = 1.0
@@ -1007,7 +975,7 @@ class GaussianDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
 
 
 @attr.s
-class GaussianWeigthedDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
+class GaussianWeightedDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
     """
     Penalty calculator that that uses Gaussian errors based
     on the observational data. Includes a floor based on a
@@ -1015,25 +983,32 @@ class GaussianWeigthedDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator)
     This is meant as a way to not fit better then the
     emulator allows, while also not constraining stronger
     than observations.
+
+    Parameters
     ----------
+
     percent_error: float
         percent error that sets the one-sigma deviation,
         in units of percent (0-100).
+
     sigma_max: float
         The number of sigmas at which the function is capped.
+
     lower: Union[unyt.unyt_quantity, float]
         The lowest independent value to calculate the model
         offset at.
+
     upper: Union[unyt.unyt_quantity, float]
         The highest independent value to calculate the model
         offset at.
-    weigth: A general weigth that scales the entire range of
+
+    weight: A general weight that scales the entire range of
         errors, but keeps relative weights intact.
     """
 
     percent_error: float = attr.ib()
     sigma_max: float = attr.ib()
-    weigth: float = attr.ib()
+    weight: float = attr.ib()
     lower: Union[unyt.unyt_quantity, float] = attr.ib()
     upper: Union[unyt.unyt_quantity, float] = attr.ib()
 
@@ -1082,20 +1057,6 @@ class GaussianWeigthedDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator)
         dependent: np.array,
         dependent_error: Optional[np.array] = None,
     ) -> List[float]:
-        """
-        Calculate the penalty function, relative to the observational
-        data, for this model.
-        independent: np.array
-            The independent data.
-        dependent: np.array
-            The dependent data for comparison.
-        dependent_error: np.array, optional
-            The dependent errors, for comparison.
-        Returns
-        -------
-        penalty, List[float]
-            The penalties for this model, between 0 and 1 each.
-        """
 
         valid_data_mask = np.logical_and(
             independent >= self.lower, independent < self.upper
@@ -1111,25 +1072,16 @@ class GaussianWeigthedDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator)
             independent[valid_data_mask]
         )
 
-        penalties_data = 1.0 - np.exp(
+        penalties = 1.0 - np.exp(
             -0.5
-            * self.weigth
             * (
                 (dependent[valid_data_mask] - obs_dependent) ** 2
-                / (obs_dependent_errors ** 2)
+                / (
+                    obs_dependent_errors ** 2
+                    + (obs_dependent * (self.percent_error / 100)) ** 2
+                )
             )
         )
-
-        penalties_percent_error = 1.0 - np.exp(
-            -0.5
-            * self.weigth
-            * (
-                (dependent[valid_data_mask] - obs_dependent) ** 2
-                / ((obs_dependent * (self.percent_error / 100)) ** 2)
-            )
-        )
-
-        penalties = np.minimum(penalties_data, penalties_percent_error)
 
         sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
         penalties[penalties > sigma_max_mask_value] = 1.0
