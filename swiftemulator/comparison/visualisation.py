@@ -88,7 +88,7 @@ def visualise_penalties_mean(
     """
 
     if use_parameters is None:
-        use_parameters = tuple(model_specification.parameter_names)
+        use_parameters = model_specification.parameter_names
 
     if figsize is None:
         if use_colorbar:
@@ -171,7 +171,7 @@ def visualise_penalties_mean(
                 ratio_grid = weighted_grid / norm_grid
 
                 im = ax.imshow(
-                    ratio_grid,
+                    ratio_grid.T,
                     extent=limits_x + limits_y,
                     origin="lower",
                     norm=norm,
@@ -242,6 +242,11 @@ def visualise_penalties_mean(
         a.set_xlabel(None)
     for a in axes_grid[:, 1:].flat:
         a.set_ylabel(None)
+
+    # As of matplotlib 3.3.4, with a large number of sub-plots this hangs...
+    if grid_size > 4:
+        fig.constrained_layout = False
+        fig.subplots_adjust(0, 0, 1, 1, 0.005, 0.005)
 
     return fig, ax
 
@@ -322,7 +327,7 @@ def visualise_penalties_generic_statistic(
     """
 
     if use_parameters is None:
-        use_parameters = tuple(model_specification.parameter_names)
+        use_parameters = model_specification.parameter_names
 
     if figsize is None:
         if use_colorbar:
@@ -336,6 +341,7 @@ def visualise_penalties_generic_statistic(
 
     number_of_parameters = len(use_parameters)
     grid_size = number_of_parameters
+
 
     fig, axes_grid = plt.subplots(
         grid_size,
@@ -395,7 +401,7 @@ def visualise_penalties_generic_statistic(
                 im = ax.pcolormesh(
                     xs,
                     ys,
-                    grid,
+                    grid.T,
                     norm=norm,
                     rasterized=True,
                 )
@@ -459,5 +465,10 @@ def visualise_penalties_generic_statistic(
         a.set_xlabel(None)
     for a in axes_grid[:, 1:].flat:
         a.set_ylabel(None)
+
+    # As of matplotlib 3.3.4, with a large number of sub-plots this hangs...
+    if grid_size > 4:
+        fig.constrained_layout = False
+        fig.subplots_adjust(0, 0, 1, 1, 0.005, 0.005)
 
     return fig, ax
