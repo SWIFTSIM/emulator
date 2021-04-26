@@ -75,9 +75,9 @@ def load_pipeline_outputs(
 
     # Need to search for possible keys within the `lines` dictionary.
     # Priority given by ordering of line_types
-    line_types = ["median", "mass_function", "mean"]
+    line_types = ["median", "mass_function", "mean", "adaptive_mass_function",]
     recursive_search = (
-        lambda d, k: d.get(k[0], recursive_search(d, k[1:])) if len(k) > 1 else None
+        lambda d, k: d.get(k[0], recursive_search(d, k[1:])) if len(k) > 0 else None
     )
     line_search = lambda d: recursive_search(d, line_types)
 
@@ -126,7 +126,7 @@ def load_pipeline_outputs(
                 unit_dict[scaling_relation]["log_dependent"] = False
 
                 if dependent_error.ndim > 1:
-                    dependent_error = np.mean(dependent_error, axis=1)
+                    dependent_error = np.mean(dependent_error, axis=0)
 
             model_values[scaling_relation][unique_identifier] = {
                 "independent": independent,
