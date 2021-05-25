@@ -8,3 +8,6 @@ examples/observational_data*
 
 *.png
 *.svg
+
+docs/build/*
+docs/source/modules/swiftemulator*
