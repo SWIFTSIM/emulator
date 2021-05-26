@@ -1,0 +1,118 @@
+Analysis tools
+==============
+
+Here we will outline some of the available
+tools that can help inspect the performance
+of the emulator. The example data will be
+the Schecter function example.
+
+
+
+Cross checks
+------------
+
+Using cross checks means setting up the emulator
+using all available datasets, but excluding one,
+and then seeing how well the emulator is able to 
+predict the data that was left out.
+
+Cross checks are the main way of quantifying
+emulator performance in the absence of validation
+data. When emulating via cosmological simulations
+it is likely to be very expensive to generate a 
+validation dataset of a large enough size. In this 
+case SWIFT-Emulator has an easy way of setting up
+cross-checks.
+
+The :meth:`swiftemulator.sensitivity.cross\_check`
+object acts identically to :meth:`swiftemulator.emulators.gaussian\_process`
+and takes the same inputs. By setting the cross-checks
+up in this way you can directly compare the results
+with the main GP that you use for predictions.
+
+.. code-block:: python
+
+    from swiftemulator.sensitivity import cross_check
+
+    schecter_ccheck = cross_check.CrossCheck()
+    schecter_ccheck.build_emulators(model_specification=model_specification,
+                            model_parameters=model_parameters,
+                            model_values=model_values)
+
+In this case `build_emulators` takes the place of `fit_model`.
+Note that build_emulators now creates N independent trained
+emulators, where N is the number of models, so this can take
+quite a long time. For this example the amount of models was
+reduced from 100 to 20.
+
+Once the emulators have been build there are some inherent
+tools to have a look at the result (see :meth:`swiftemulator.sensitivity.cross\_check`).
+We will use `build_mocked_model_values_original_independent()`
+to compare the cross-check predictions with the original
+data.
+
+.. code-block:: python
+
+    data_by_cc = schecter_ccheck.build_mocked_model_values_original_independent()
+
+    for unique_identifier in range(20):
+        cc_over_og = data_by_cc[unique_identifier]["dependent"] / \
+                    model_values[unique_identifier]["dependent"]
+        plt.plot(data_by_cc[unique_identifier]["independent"],cc_over_og)
+        plt.xlabel("Mass")
+        plt.ylabel("Cross-check / Truth")
+        
+    plt.savefig("Cross_check_accuracy.png",dpi=200)
+
+.. image:: Cross_check_accuracy.png
+
+Just with a few line we are able to quantify how accurate
+the emulator is. Also note that any `ModelValues` container
+can be parsed as if it is a dictionary.
+
+Model Parameters Features
+-------------------------
+
+This highlights two small functions that are attached to
+the :meth:`swiftemulator.backend.model\_parameters`
+object. The first is the ability to generate a quick plot
+of the experimental design using :mod:`corner`.
+
+.. code-block:: python
+
+    model_parameters.plot_model(model_specification)
+
+.. image:: experimental_design.png
+
+Note that the axis label used here are the one passed to
+the model specification. This can be used to have a quick
+look at whether your space is well sampled.
+
+After finding a set of best fit model parameters it is
+sometimes usefull to see if there are any individual model
+that has similar values. `find_closest_model` takes a
+dictionary of input values and finds the training model
+that is cloests to those values. 
+
+.. code-block:: python
+
+    best_model = {"log_M_star": 11.3, "alpha": -2.1}
+
+    model_parameters.find_closest_model(best_model,number_of_close_models=5)
+
+which outputs
+
+.. code-block:: python
+
+    ([2, 12, 18, 19, 3],
+    [{'log_M_star': 11.26347510702813, 'alpha': -1.9614226414699145},
+    {'log_M_star': 11.507944778215956, 'alpha': -1.9818583963792449},
+    {'log_M_star': 11.19527147203741, 'alpha': -1.8330160108907092},
+    {'log_M_star': 11.033961506507945, 'alpha': -2.275313906753826},
+    {'log_M_star': 11.67912812994198, 'alpha': -2.0664526312834353}])
+
+It returns a list with the `unique_identifier` of each close
+model, and the model parameters belonged to that model. This
+can be used to explore the models close to you best fit model,
+for example to check how well sampled that part of parameter
+space is.

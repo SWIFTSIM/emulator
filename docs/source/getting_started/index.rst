@@ -1,3 +1,5 @@
+.. _getting_started:
+
 Getting Started
 ===============
 
@@ -174,6 +176,6 @@ high accuracy.
 
 .. image:: predict_vs_model.png
 
-This cover the most basic way to use SWIFT-Emulator and
+This covers the most basic way to use SWIFT-Emulator and
 should give a good baseline for using some of the
 additional features it offers.

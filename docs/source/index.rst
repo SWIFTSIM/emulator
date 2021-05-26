@@ -15,7 +15,9 @@ to emulate anything, given a good set of training data.
    :maxdepth: 2
 
    getting_started/index
-
+   
+   emulator_analysis/index
+   
    modules/index
 
 
