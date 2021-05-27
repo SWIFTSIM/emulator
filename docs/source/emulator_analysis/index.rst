@@ -181,7 +181,7 @@ parameter space.
 
 .. image:: hyperparameters.png
 
-This mehtod is a lot slower to the default hyperparameter
+This method is a lot slower to the default hyperparameter
 optimisation, and may take some time to compute. The main
 take away from plots like this is to see whether the
 hyperparameters are converged, and whether they agree with

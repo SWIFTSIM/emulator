@@ -17,6 +17,8 @@ to emulate anything, given a good set of training data.
    getting_started/index
    
    emulator_analysis/index
+
+   emulator_options/index
    
    modules/index
 
