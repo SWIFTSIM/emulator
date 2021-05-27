@@ -15,7 +15,7 @@ most cumbersome part of emulation. Once everything is in the
 right format the emulation itself will be very easy.
 
 At the basis of the SWIFT-Emulator lies the ability to train
-a Gaussian process (CP) based on a set of training data. As 
+a Gaussian process (GP) based on a set of training data. As 
 the main goal is emulating scaling relations on the back of 
 hydro simulations you should think of the emulation being in 
 the following form
@@ -68,7 +68,7 @@ The mode specification is used to store some of the metadata
 of the training set.
 
 Lets assume our training set consists of 100 simulations where
-our model parameters sampled uniformly
+our model parameters are randomly sampled
 
 .. code-block:: python
 
@@ -77,7 +77,7 @@ our model parameters sampled uniformly
 
 This can be used to set up the second container, which 
 contains the model parameters. For each unique model, named
-by `unique_identifier` we store the values in a dictionary
+by `unique_identifier`, we store the values in a dictionary
 
 .. code-block:: python
 
@@ -152,7 +152,6 @@ predictions is extremely simple
     predictparams = {"log_M_star": 11.5, "alpha": -2}
     predict_x = np.linspace(10,12,100)
 
-    import matplotlib.pyplot as plt
     pred, pred_var = schecter_emulator.predict_values(predict_x, predictparams)
 
 
