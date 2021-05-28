@@ -109,14 +109,11 @@ train_model = lambda x: x.fit_model(
     model_values=scaling_relation,
 )
 
-emulator = GaussianProcessEmulator(
-    model_specification=spec,
-    model_parameters=parameters,
-    model_values=scaling_relation,
-)
+emulator = GaussianProcessEmulator(mean_model=LinearMeanModel())
 
-emulator.build_arrays()
-emulator.fit_model(mean_model=LinearMeanModel())
+emulator.fit_model(
+    model_specification=spec, model_parameters=parameters, model_values=scaling_relation
+)
 
 # Now that we have a trained model, we can super-sample that model
 # into a much larger hyper-cube. This will allow us to more closely
