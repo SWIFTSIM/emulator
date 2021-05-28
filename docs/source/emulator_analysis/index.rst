@@ -20,8 +20,8 @@ Cross checks are the main way of quantifying
 emulator performance in the absence of validation
 data. When emulating via cosmological simulations
 it is likely to be very expensive to generate a 
-validation dataset of a large enough size. In this 
-case SWIFT-Emulator has an easy way of setting up
+validation dataset of a large enough size. for cases
+like this SWIFT-Emulator has an easy way of setting up
 cross-checks.
 
 The :meth:`swiftemulator.sensitivity.cross\_check`
@@ -102,8 +102,8 @@ This is implemented into the SWIFT-Emulator with
 .. image:: parameter_sweep.png
 
 `mock_sweep` returns the values and parameter of the 
-sweep as `ModelValues` `and ModelParameters`
-containers, that can easily be parsed. 
+sweep as `ModelValues` and `ModelParameters`
+containers, that are easy to parse. 
 
 Model Parameters Features
 -------------------------
@@ -127,7 +127,7 @@ After finding a set of best fit model parameters it is
 sometimes usefull to see if there are any individual model
 that has similar values. `find_closest_model` takes a
 dictionary of input values and finds the training model
-that is cloests to those values. 
+that is closets to those values. 
 
 .. code-block:: python
 
@@ -155,7 +155,7 @@ space is.
 Checking Hyperparameters
 ------------------------
 
-In general one should not use the hyperparameters, and they
+In general one should not look at the hyperparameters. They
 should only be used as a diagnostic when the emulator is
 giving strange results. The SWIFT-Emulator provides an
 easy way to check the parameterspace of the hyperparameters.
@@ -181,8 +181,8 @@ parameter space.
 
 .. image:: hyperparameters.png
 
-This method is a lot slower to the default hyperparameter
+This method is a lot slower than the default hyperparameter
 optimisation, and may take some time to compute. The main
 take away from plots like this is to see whether the
-hyperparameters are converged, and whether they agree with
-the simpler optimisation step.
+hyperparameters are converged, and whether they are 
+consistent with the faster optimisation method.
