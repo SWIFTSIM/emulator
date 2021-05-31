@@ -172,7 +172,8 @@ parameter space.
 .. code-block:: python
 
     from swiftemulator.emulators import gaussian_process_mcmc
-    schecter_emulator_mcmc = gaussian_process_mcmc.GaussianProcessEmulatorMCMC(burn_in_steps=1, mcmc_steps=1000)
+    schecter_emulator_mcmc = gaussian_process_mcmc.GaussianProcessEmulatorMCMC(burn_in_steps=1
+                                                                              ,mcmc_steps=1000)
     schecter_emulator_mcmc.fit_model(model_specification=model_specification,
                             model_parameters=model_parameters,
                             model_values=model_values)
