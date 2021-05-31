@@ -44,10 +44,10 @@ to specify what parameter we want to vary.
     parameter_transforms = {"SNII_energy_fraction_n_0_H_p_cm3": lambda x: 10.0 ** x}
 
 In this case it is important that your
-`parameter_names` are identical to what they are
+`parameter_names` are identical to the
 names in the SWIFT parameter file. The parameter
 file is a `.yml` file so the individual parameters
-should be names in that format. 
+should be named in that format. 
 
 In this case the fourth parameter, 
 `EAGLEFeedback:SNII_energy_fraction_n_0_H_p_cm3`

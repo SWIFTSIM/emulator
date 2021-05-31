@@ -11,7 +11,7 @@ Hypercube, while the data files contain the
 results for the scaling relations for each model.
 
 It is adviced to use the SWIFT-io options if you
-want to compare direclty with observational data.
+want to compare directly with observational data.
 The main advantage being that loading the data in
 this way will ensure that you use the correct units.
 
@@ -33,9 +33,8 @@ the data files. This can easily be obtained using
 
 For the parameter we use
 :meth:`swiftemulator.io.swift.load_parameter_files`.
-This read in the data and returns both a `ModelSpecification`
-and a `ModelParameters` container to pass to the
-emulator.
+This reads in the parameters and returns both a `ModelSpecification`
+and a `ModelParameters` container to pass to the emulator.
 
 .. code-block:: python
 
@@ -82,7 +81,7 @@ being stored in a `ModelParameters` container.
 To read the `ModelValues` the function 
 :meth:`swiftemulator.io.swift.load_pipeline_outputs`
 is used. In this case you have to supply the
-filenames, and the names of the scaling relation.
+filenames, and the name(s) of the scaling relation(s).
 These names can be easily found in the data file 
 and are set by the config used for the pipeline.
 `log_independent` and `log_dependent` will cause

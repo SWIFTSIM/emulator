@@ -4,7 +4,7 @@ Comparing With Data
 To unlock the full power of emulation it
 is often usefull to compare your results
 with observational data. With
-SWIFT-Emulator you can direclty compare
+SWIFT-Emulator you can directly compare
 the emulated outputs with the observational
 data stored in `velociraptor-comparison-data`
 which can be found 
@@ -193,7 +193,7 @@ of functions available within
 to add your own functions. The base class
 :meth:`swiftemulator.comparison.penalty.PenaltyCalculator`
 covers the most important part, which is loading and
-interpolating the data. You can the  add whichever calculattion
+interpolating the data. You can then add whichever calculattion
 of the penalties you want. In the example below we create a
 function that is Gaussian weighted, with a constent error
 term.
@@ -222,7 +222,7 @@ term.
 
 .. image:: example_penalty_example.png
 
-For the simplest models you can also still use the plot_penalty
+For the simplest models you can also still use the `plot_penalty`
 functionality. There are also PF's available that use the
 errors on the data, for example
 :meth:`swiftemulator.comparison.penalty.GaussianDataErrorsPenaltyCalculator`.
