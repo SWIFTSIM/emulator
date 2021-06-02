@@ -342,7 +342,6 @@ def visualise_penalties_generic_statistic(
     number_of_parameters = len(use_parameters)
     grid_size = number_of_parameters
 
-
     fig, axes_grid = plt.subplots(
         grid_size,
         grid_size,

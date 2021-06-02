@@ -11,16 +11,16 @@ the Schecter function example.
 Cross checks
 ------------
 
-Using cross checks means setting up the emulator
-using all available datasets, but excluding one,
-and then seeing how well the emulator is able to 
-predict the data that was left out.
+To set up a cross check, the emulator is
+trained on all but one of the input data-sets.
+The resulting emulator can then be compared
+against the model that was left out.
 
 Cross checks are the main way of quantifying
 emulator performance in the absence of validation
 data. When emulating via cosmological simulations
 it is likely to be very expensive to generate a 
-validation dataset of a large enough size. for cases
+validation dataset of sufficient size. for cases
 like this SWIFT-Emulator has an easy way of setting up
 cross-checks.
 
@@ -147,7 +147,7 @@ which outputs
     {'log_M_star': 11.67912812994198, 'alpha': -2.0664526312834353}])
 
 It returns a list with the `unique_identifier` of each close
-model, and the model parameters belonged to that model. This
+model, and the model parameters belonging to that model. This
 can be used to explore the models close to you best fit model,
 for example to check how well sampled that part of parameter
 space is.
@@ -159,12 +159,12 @@ In general one should not look at the hyperparameters. They
 should only be used as a diagnostic when the emulator is
 giving strange results. The SWIFT-Emulator provides an
 easy way to check the parameterspace of the hyperparameters.
-In general the hyperparameters are optimised to optimise the
+The hyperparameters are optimised to using the
 marginalised likelihood, so we can inspect how well converged
 they are by looking at the probability distribution of each
 individual hyperparameter. This is done via
 :meth:`swiftemulator.emulators.gaussian\_process\_mcmc`.
-In this case the MCMC implies the use of Markov chian
+In this case MCMC implies the use of Markov chian
 Monte Carlo (via :mod:`emcee`) to find the best
 hyperparameters, allowing us to look at the complete
 parameter space.
@@ -172,7 +172,8 @@ parameter space.
 .. code-block:: python
 
     from swiftemulator.emulators import gaussian_process_mcmc
-    schecter_emulator_mcmc = gaussian_process_mcmc.GaussianProcessEmulatorMCMC(burn_in_steps=1, mcmc_steps=1000)
+    schecter_emulator_mcmc = gaussian_process_mcmc.GaussianProcessEmulatorMCMC(burn_in_steps=1
+                                                                              ,mcmc_steps=1000)
     schecter_emulator_mcmc.fit_model(model_specification=model_specification,
                             model_parameters=model_parameters,
                             model_values=model_values)
