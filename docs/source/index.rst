@@ -10,7 +10,7 @@ Information about `SWIFT` can be found
 `here <http://swift.dur.ac.uk/>`_, Information about 
 `VELOCIraptor` can be found 
 `here <https://velociraptor-stf.readthedocs.io/en/latest/>`_
-and tnformation about the `SWIFT-pipeline` can be found 
+and information about the `SWIFT-pipeline` can be found 
 `here <https://github.com/SWIFTSIM/pipeline>`_.
 
 By combining a selection of SWIFT-io and GP analysis 

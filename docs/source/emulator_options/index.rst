@@ -89,3 +89,27 @@ of the cross checks,
 which acts the same as the normal `cross_check`
 but instead uses the binned emulator, making
 it easy to compare the two methods.
+
+Different Kernels
+-----------------
+One of the tools that :mod:`george` provides is the ability
+to use different kernels for you Gaussian Process. By default
+:mod:`swiftemulator` makes the choice for you, and
+uses a Gaussian-like exponential squared `ExpSquaredKernel` kernel.
+This is the recommended kernel for most uses. Other kernels
+can be imported directly from :mod:`george` and loaded in
+the emulator with the `kernel=` option. The kernel does
+need to be initialized with the correct number of dimensions
+(number of parameter plus one independent).
+
+.. code-block:: python
+
+    from george.kernels import ExpKernel
+
+    kernel = 1.0 * ExpKernel(1.0, ndim=9, axes=0)
+    emulator = GaussianProcessEmulator(kernel=kernel)
+
+There are a lot of options available with `george`. The
+documentation on the different kernels available with 
+`george` can be found 
+`here <https://george.readthedocs.io/en/latest/user/kernels/>`_.
