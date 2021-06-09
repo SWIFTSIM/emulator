@@ -93,7 +93,7 @@ it easy to compare the two methods.
 Different Kernels
 -----------------
 One of the tools that :mod:`george` provides is the ability
-to use different kernels for you Gaussian Process. By default
+to use different kernels for your Gaussian Process. By default
 :mod:`swiftemulator` makes the choice for you, and
 uses a Gaussian-like exponential squared `ExpSquaredKernel` kernel.
 This is the recommended kernel for most uses. Other kernels
