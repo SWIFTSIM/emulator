@@ -69,7 +69,12 @@ class ModelValues(object):
                         f"dependent for model {unique_id}."
                     )
 
-            acceptable_keys = ["independent", "dependent", "dependent_error"]
+            acceptable_keys = [
+                "independent",
+                "dependent",
+                "dependent_error",
+                "bin_edges",
+            ]
 
             for key in scaling_relation.keys():
                 if key not in acceptable_keys:
