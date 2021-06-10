@@ -13,6 +13,8 @@ from swiftemulator.backend.model_parameters import ModelParameters
 from swiftemulator.backend.model_specification import ModelSpecification
 from swiftemulator.backend.model_values import ModelValues
 
+from swiftemulator.io.error import convert_dependent_error_to_standard_error_using_edges
+
 from typing import List, Optional, Dict, Hashable, Tuple, Union, Callable
 from functools import reduce
 from pathlib import Path
@@ -22,11 +24,59 @@ import yaml
 import numpy as np
 
 
+def _validate_bins(
+    bin_centers: np.array,
+    bin_edges: np.array,
+) -> np.array:
+    """
+    Validates the pipeline output bins. Note that the pipeline will
+    claim to output all viable bins, not taking into account the
+    fact that some will not be written out as actual centers if there
+    is no data in those bins.
+
+    Parameters
+    ----------
+
+    bin_centers: np.array
+        Centers of the associated bin edges.
+
+    bin_edges: np.array
+        A list of _possible_ bin edges, with some not being used
+        as acutal bins in ``bin_centers``
+
+    Returns
+    -------
+
+    validated_bin_edges: np.array
+        Bin edges that are associated with the input bin_edges.
+
+    Notes
+    -----
+
+    The current implementation assumes that missing bins contain
+    no items, and that the left hand bin is always valid
+    """
+
+    try:
+        valid_bins = np.digitize(bin_centers, bin_edges, right=True)
+
+        return bin_edges[np.append(valid_bins, 0)]
+    except ValueError:
+        # Some broken outputs have 2 dimensional bin_xs; these
+        # are mass functions that should not be corrected anyway.
+        # This is linked to the issue in the velociraptor-python
+        # repository at:
+        # https://github.com/SWIFTSIM/velociraptor-python/issues/65
+        return np.append(bin_centers, bin_centers[-1] * 2.0)
+
+
 def load_pipeline_outputs(
     filenames: Dict[Hashable, Path],
     scaling_relations: List[str],
     log_independent: Optional[List[str]] = None,
     log_dependent: Optional[List[str]] = None,
+    use_mean_sampling_errors: Optional[Dict[str, str]] = None,
+    use_median_sampling_errors: Optional[Dict[str, str]] = None,
 ) -> Tuple[Dict[str, ModelValues], Dict[str, Dict[str, Union[str, bool]]]]:
     """
     Loads the pipeline outputs from the provided files, for
@@ -55,6 +105,20 @@ def load_pipeline_outputs(
         the dependent values (given by ``values`` in the yaml files)
         should be log-scaled (uses ``log10``).
 
+    use_mean_sampling_errors: Dict[str, str], optional
+        Use sampling errors for the keys in the dictionaries, using the
+        histograms specified as the values. This is useful for correcting
+        mean lines that have their scatter given as percentile ranges
+        which may include physical scatter in the scaling relation.
+
+    use_median_sampling_errors: Dict[str, str], optional
+        Use sampling errors for the keys in the dictionaries, using the
+        histograms specified as the values. This is useful for correcting
+        median lines that have their scatter given as percentile ranges
+        which may include physical scatter in the scaling relation.
+        This acts the same as the mean sampling errors, but includes the
+        correction factor of 1.253.
+
     Returns
     -------
 
@@ -71,6 +135,19 @@ def load_pipeline_outputs(
 
     model_values = {scaling_relation: {} for scaling_relation in scaling_relations}
 
+    use_mean_sampling_errors = (
+        {} if use_mean_sampling_errors is None else use_mean_sampling_errors
+    )
+    use_median_sampling_errors = (
+        {} if use_median_sampling_errors is None else use_median_sampling_errors
+    )
+
+    histograms_to_read = set(
+        list(use_mean_sampling_errors.values())
+        + list(use_median_sampling_errors.values())
+    )
+    histograms = {histogram: {} for histogram in histograms_to_read}
+
     unit_dict = {scaling_relation: {} for scaling_relation in scaling_relations}
 
     # Need to search for possible keys within the `lines` dictionary.
@@ -80,7 +157,9 @@ def load_pipeline_outputs(
         "mass_function",
         "mean",
         "adaptive_mass_function",
+        "histogram",
     ]
+
     recursive_search = (
         lambda d, k: d.get(k[0], recursive_search(d, k[1:])) if len(k) > 0 else None
     )
@@ -102,10 +181,16 @@ def load_pipeline_outputs(
             dependent = np.array(line["values"])
             unit_dict[scaling_relation]["dependent_units"] = line["values_units"]
 
+            bin_edges = _validate_bins(
+                bin_centers=independent,
+                bin_edges=np.array(line["bins_x"]),
+            )
+
             dependent_error = np.array(line.get("scatter", np.zeros_like(dependent)))
 
             if scaling_relation in log_independent:
                 independent = np.log10(independent)
+                bin_edges = np.log10(bin_edges)
                 unit_dict[scaling_relation]["log_independent"] = True
             else:
                 unit_dict[scaling_relation]["log_independent"] = False
@@ -137,7 +222,88 @@ def load_pipeline_outputs(
                 "independent": independent,
                 "dependent": dependent,
                 "dependent_error": dependent_error,
+                "bin_edges": bin_edges,
             }
+
+        for histogram in histograms_to_read:
+            line = line_search(raw_data[histogram]["lines"])
+
+            independent = np.array(line["centers"])
+            dependent = np.array(line["values"])
+
+            bin_edges = _validate_bins(
+                bin_centers=independent,
+                bin_edges=np.array(line["bins_x"]),
+            )
+
+            histograms[histogram][unique_identifier] = {
+                "independent": independent,
+                "dependent": dependent,
+                "bin_edges": bin_edges,
+            }
+
+    # Now correct all mean and median lines to use their associated sampling
+    # errors, rather than the scatter that is provided.
+
+    for scaling_relation, histogram in use_mean_sampling_errors.items():
+        for unique_id in filenames.keys():
+            model_hist = histograms[histogram][unique_id]
+            model_scaling_relation = model_values[scaling_relation][unique_id]
+
+            if scaling_relation in log_independent:
+                histogram_bin_edges = np.log10(model_hist["bin_edges"])
+            else:
+                histogram_bin_edges = model_hist["bin_edges"]
+
+            standard_error = convert_dependent_error_to_standard_error_using_edges(
+                scaling_relation=model_scaling_relation["dependent"],
+                scaling_relation_bin_edges=model_scaling_relation["bin_edges"],
+                histogram=model_hist["dependent"],
+                histogram_bin_edges=histogram_bin_edges,
+                log_independent=scaling_relation in log_independent,
+                log_dependent=scaling_relation in log_dependent,
+                correction_factor=1.0,
+            )
+
+            # Un-2dify the standard error (for now!) as GPE cannot support
+            # 2D errors.
+            if scaling_relation in log_dependent:
+                standard_error = 0.5 * (standard_error[0, :] + standard_error[1, :])
+
+            model_values[scaling_relation][unique_id][
+                "dependent_error"
+            ] = standard_error
+
+    # Median exactly the same as the code above but using 1.253
+
+    for scaling_relation, histogram in use_median_sampling_errors.items():
+        for unique_id in filenames.keys():
+            model_hist = histograms[histogram][unique_id]
+            model_scaling_relation = model_values[scaling_relation][unique_id]
+
+            if scaling_relation in log_independent:
+                histogram_bin_edges = np.log10(model_hist["bin_edges"])
+            else:
+                histogram_bin_edges = model_hist["bin_edges"]
+
+            standard_error = convert_dependent_error_to_standard_error_using_edges(
+                scaling_relation=model_scaling_relation["dependent"],
+                scaling_relation_bin_edges=model_scaling_relation["bin_edges"],
+                histogram=model_hist["dependent"],
+                histogram_bin_edges=histogram_bin_edges,
+                log_independent=scaling_relation in log_independent,
+                log_dependent=scaling_relation in log_dependent,
+                correction_factor=1.253,
+            )
+
+            # Un-2dify the standard error (for now!) as GPE cannot support
+            # 2D errors.
+            if scaling_relation in log_dependent:
+                standard_error = 0.5 * (standard_error[0, :] + standard_error[1, :])
+
+            model_values[scaling_relation][unique_id][
+                "dependent_error"
+            ] = standard_error
 
     return {k: ModelValues(v) for k, v in model_values.items()}, unit_dict
 
