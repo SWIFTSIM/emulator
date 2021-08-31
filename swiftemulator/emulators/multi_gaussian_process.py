@@ -243,21 +243,23 @@ class MultipleGaussianProcessEmulator(BaseEmulator):
                 independent=independent[mask], model_parameters=model_parameters
             )
 
-            inputs.append(independent[mask])
-            output.append(predicted)
-            output_error.append(errors)
+            inputs.append(list(independent[mask]))
+            output.append(list(predicted))
+            output_error.append(list(errors))
 
         # Now that we've predicted it all, we need to explicitly deal
         # with overlap and non-overlap.
 
-        overlap_ranges = []
+        overlap_ranges = {}
 
         for index in range(1, len(self.independent_regions)):
             left = self.independent_regions[index][0]
-            right = self.independent_regions[index - 1][0]
+            right = self.independent_regions[index - 1][1]
 
-            if right > left:
-                overlap_ranges.append([left, right])
+            if right is None or left is None:
+                continue
+            elif right > left:
+                overlap_ranges[index - 1] = [left, right]
 
         dependent_predictions = np.empty_like(independent)
         dependent_prediction_errors = np.empty_like(independent)
@@ -268,8 +270,16 @@ class MultipleGaussianProcessEmulator(BaseEmulator):
             if x not in inputs[current_emulator]:
                 current_emulator += 1
 
-            # Is it in an overlap?
-            low, high = overlap_ranges[current_emulator]
+            # Is it in the prior overlap?
+            low, high = overlap_ranges.get(current_emulator - 1, [float("inf")] * 2)
+
+            if low <= x <= high:
+                # We have already counted this independent variable.
+                continue
+
+            # Is it in this emulator's overlap?
+            low, high = overlap_ranges.get(current_emulator, [float("inf")] * 2)
+
             if low <= x <= high:
                 dependent_index_left = inputs[current_emulator].index(x)
                 dependent_index_right = inputs[current_emulator + 1].index(x)
