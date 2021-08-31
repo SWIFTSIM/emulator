@@ -8,7 +8,9 @@ from swiftemulator.backend.emulator_generator import (
     ModelValues,
 )
 
-from swiftemulator.emulators.multi_gaussian_process import MultipleGaussianProcessEmulator
+from swiftemulator.emulators.multi_gaussian_process import (
+    MultipleGaussianProcessEmulator,
+)
 
 import numpy as np
 
@@ -119,7 +121,4 @@ def test_basic_emulator_generator_multiple():
         model_values=model_values,
     )
 
-    gpe.predict_values(
-    	np.array([0.2, 0.9, 9.9, 5.0]), {"x": 0.5, "y": 1}
-    )
-
+    gpe.predict_values(np.array([0.2, 0.9, 9.9, 5.0]), {"x": 0.5, "y": 1})
