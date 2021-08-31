@@ -8,7 +8,7 @@ from swiftemulator.backend.emulator_generator import (
     ModelValues,
 )
 
-from swiftemulator.emulators.multi_gaussian_process import MultipleGaussianProcessEmuator
+from swiftemulator.emulators.multi_gaussian_process import MultipleGaussianProcessEmulator
 
 import numpy as np
 

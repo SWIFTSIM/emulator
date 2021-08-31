@@ -21,7 +21,7 @@ from scipy.optimize import minimize
 
 
 @attr.s
-class MultipleGaussianProcessEmuator(BaseEmulator):
+class MultipleGaussianProcessEmulator(BaseEmulator):
     """
     Generator for emulators for individual scaling relations,
     using multiple trained gaussian processes regression
