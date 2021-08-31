@@ -55,12 +55,12 @@ class MultipleGaussianProcessEmuator(BaseEmulator):
 
     kernel: Optional[george.kernels.Kernel] = attr.ib(default=None)
     mean_model: Optional[MeanModel] = attr.ib(default=None)
-    independent_regions: Optional[List[List[float]]] = attr.ib(default=None)
+    independent_regions: Optional[List[List[float]]] = attr.ib(default=[[None, None]])
 
     model_specification: Optional[ModelSpecification] = None
     model_parameters: Optional[ModelParameters] = None
     model_values: Optional[ModelValues] = None
-    model_values_regions = Optional[List[ModelValues]] = None
+    model_values_regions: Optional[List[ModelValues]] = None
 
     emulators: Optional[List[george.GP]] = None
 
@@ -99,7 +99,13 @@ class MultipleGaussianProcessEmuator(BaseEmulator):
 
             ind = raw_values["independent"]
             dep = raw_values["dependent"]
-            err = raw_values["dependent_error"]
+
+            no_error = False
+
+            try:
+                err = raw_values["dependent_error"]
+            except KeyError:
+                no_error = True
 
             for index, (low, high) in enumerate(self.independent_regions):
                 mask = np.logical_and(
@@ -110,8 +116,10 @@ class MultipleGaussianProcessEmuator(BaseEmulator):
                 values[index][unique_id] = {
                     "independent": ind[mask],
                     "dependent": dep[mask],
-                    "dependent_error": err[mask],
                 }
+
+                if not no_error:
+                    values[index][unique_id]["dependent_error"] = err[mask]
 
         self.model_values_regions = [ModelValues(x) for x in values]
 
