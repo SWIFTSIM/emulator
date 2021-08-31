@@ -206,6 +206,7 @@ class MultipleGaussianProcessEmuator(BaseEmulator):
         This will use the originally defined regions and overlaps will
         be calculated by using the weighted linear sum corresponding
         to the independent variable's distance to the adjacent boundary.
+        The errors use a weighted square sum.
         """
 
         if self.emulators is None:
