@@ -1,5 +1,5 @@
 """
-Tests the emulator generator in ``swift-emulator/backend/emulator_generator.py``
+Tests the emulator in ``swift-emulator/emulators/gaussian_process_one_dim.py``
 """
 
 from swiftemulator.backend.emulator_generator import (
