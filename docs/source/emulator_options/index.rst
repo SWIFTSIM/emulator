@@ -89,3 +89,52 @@ of the cross checks,
 which acts the same as the normal `cross_check`
 but instead uses the binned emulator, making
 it easy to compare the two methods.
+
+1D Emulation
+------------
+
+Sometimes the emulation problem is better solved as
+
+.. math::
+    f(\vec\theta)
+
+In this case we only have the model parameters.
+the emulator won't be a function of an additional x
+parameter stored in the model values. In this case the
+use can use :meth:`swiftemulator.emulators.gaussian_process_one_dim`.
+This method has similar functionality as the other
+emulator types. It will still need a ModelValues
+container. Here is an example of how such a container
+should look like:
+
+.. code-block:: python
+
+    modelvalues = {}
+    for unique_identifier in range(100):
+        dependent = func(a_arr[unique_identifier], b_arr[unique_identifier])
+        dependent_error = 0.02 * dependent
+        modelvalues[unique_identifier] = {"independent": [None],
+                                          "dependent": [dependent],
+                                        "dependent_error": [dependent_error]}
+
+In order to make use of the general emulator
+containers, it is still required to provide the values
+as list. In this case the lists will only contain a single
+value. The independent value will not be read. When your
+data is in the correct format the emulator can be trained
+like all the other methods.
+
+.. code-block:: python
+
+    from swiftemulator.emulators import gaussian_process_one_dim
+
+    schecter_emulator_one_dim = gaussian_process_one_dim.GaussianProcessEmulator1D()
+    schecter_emulator_one_dim.fit_model(model_specification=model_specification,
+                                       model_parameters=model_parameters,
+                                       model_values=model_values)
+
+The only other thing of note is that while
+`predict_values` retains the same functionality,
+you are no longer required to specify any independent
+values. The prediction is now based purely of the
+given values of the model parameters.
