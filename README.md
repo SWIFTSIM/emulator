@@ -76,5 +76,5 @@ will be installed automatically by `pip` when installing from PyPI.
 Authors
 -------
 
-+ Roi Kugel
-+ Josh Borrow
++ Roi Kugel (@Moyoxkit)
++ Josh Borrow (@jborrow)
