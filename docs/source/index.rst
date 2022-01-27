@@ -22,6 +22,7 @@ It includes functionality to:
 - Generate sweeps across model parameter space for the emulated
   scaling relations to assist in physical insight, as well as
   sensitivity analysis tools based upon raw and synthetic data.
+- Validate predictions through cross validation.
 - Visualise the resulting penalty data to assist in model choice
   decisions.
 - Produce inputs and read outputs from the cosmological code
