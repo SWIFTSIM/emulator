@@ -5,10 +5,10 @@ SWIFT Emulator
 ![Test Status](https://github.com/swiftsim/emulator/actions/workflows/pytest.yml/badge.svg)
 [![PyPI version](https://badge.fury.io/py/swiftemulator.svg)](https://badge.fury.io/py/swiftemulator)
 
-The SWIFT emulator was initially designed for [SWIFT](http://swift.dur.ac.uk)
+The SWIFT emulator (henceforth 'the emulator') was initially designed for [SWIFT](http://swift.dur.ac.uk)
 outputs, and includes utilities to read and write SWIFT data.
 
-The emulator used to predict 
+The emulator can be used used to predict 
 outputs of simulations without having to run them, by employing Gaussian Process
 Regression with `george` and sensitivity analysis with `SALib`.
 
@@ -17,7 +17,7 @@ Dcumentation is available at [ReadTheDocs](https://swiftemulator.readthedocs.io/
 Predicting Simulations
 ----------------------
 
-The SWIFT Emulator (henceforth 'the emulator') can predict a given scaling relation
+The emulator can predict a given scaling relation
 (the relationship between two output variables in a simulation, for instance the
 masses of galaxies and their size) when varying the underlying physical model
 simulated in a continuous way.

@@ -1,5 +1,5 @@
-Contributing to SWIFTsimIO
-==========================
+Contributing to SWIFT Emulator
+==============================
 
 Contributions for the SWIFT Emulator should come through our GitHub repository,
 available at https://github.com/swiftsim/emulator.
