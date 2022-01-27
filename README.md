@@ -43,8 +43,9 @@ are typically missing.
 
 The SWIFT Emulator package provides a one-stop solution, with a consistent API,
 for developing a model design, running it (if using SWIFT), reading in data (
-again if using SWIFT), building an emulation model, validating said model, and
-visualising the results.
+again if using SWIFT), building an emulation model, validating said model,
+comparing the model against ground-truth data _across parameter space_ 
+(e.g. observations), and visualising the results.
 
 Installation
 ------------
