@@ -23,15 +23,15 @@ bibliography: paper.bib
 
 # Summary
 
-The forces on stars, galaxies, and dark matter under external gravitational
-fields lead to the dynamical evolution of structures in the universe. The orbits
-of these bodies are therefore key to understanding the formation, history, and
-future state of galaxies. The field of "galactic dynamics," which aims to model
-the gravitating components of galaxies to study their structure and evolution,
-is now well-established, commonly taught, and frequently used in astronomy.
-Aside from toy problems and demonstrations, the majority of problems require
-efficient numerical tools, many of which require the same base code (e.g., for
-performing numerical orbit integration).
+`swift-emulator` is a Python toolkit for using Gaussian processes 
+machine learning to emulate scaling relations from cosmological simulations. 
+`swift-emulator` focusses on having a clear, easy to use design to remove
+the barrier to entry for using emulator techniques. `swift-emulator` provides
+tools for every step along the way, from the design of the parameter sampling,
+to training the Gaussian process and finally anaylsing the trained emulators.
+By making these techniques easier to use, in particular in combination with
+the SWIFT [@Schaller2018; @Borrow2020] it will be possible use fitting methods 
+(like MCMC) to get a better understanding of the models used in the simulations.
 
 # Background
 
@@ -48,7 +48,7 @@ evaluations of the model are required to explore the parameter space,
 computationally unfeasable. In order to get a statistical grip on the models
 of cosmology and galaxy formation, a better solution is needed.
 
-This problem is the major limiting factor in "calibration" of the sub-resolution
+This problem is a major limiting factor in "calibration" of the sub-resolution
 (subgrid) models that are often used. Works like [@Vogelsberger2014; @Crain2015
 @McCarthy2017; @Pillepich2018] are able to "match" observed relations
 by eye, but a statistical ground for the chosen parameters is missing. This
@@ -103,8 +103,8 @@ by hand, making proper use of emulators more difficult.
 
 Many packages cexist for Gausian process emulation, like
 `george` (@Ambikasaran2015; this provides the basis for `swift-emulator`),
-`gpytorch` [@Gardner2018] `GPy` (CITE). Additionally, a package like
-`pyDOE` (CITE) can be used to set up efficient parameter samplings.
+`gpytorch` [@Gardner2018] and `GPy` [@gpy2014]. Additionally, a package like
+`pyDOE` [@pyDOE2012] can be used to set up efficient parameter samplings.
 However, most of these packages operate close to theory, and create
 a significant barrier for entry.
 
@@ -143,24 +143,9 @@ using the emulator with a different simulation code is easy. `swift-emulator`
 is currently being used for simulation projects outside of the SWIFT
 project for the calibration of postprocessing models.
 
-# Citations
-
-Citations to entries in paper.bib should be in
-[rMarkdown](http://rmarkdown.rstudio.com/authoring_bibliographies_and_citations.html)
-format.
-
-If you want to cite a software repository URL (e.g. something on GitHub without a preferred
-citation) then you can do it with the example BibTeX entry below for @fidgit.
-
-For a quick reference, the following citation commands can be used:
-- `@author:2001`  ->  "Author et al. (2001)"
-- `[@author:2001]` -> "(Author et al., 2001)"
-- `[@author1:2001; @author2:2001]` -> "(Author1 et al., 2001; Author2 et al., 2002)"
-
 # Acknowledgements
 
 We acknowledge support from the SWIFT collaboration whilst developing this project.
-
-DON'T FORGET TO PUT YOUR FUNDING INFORMATION IN HERE
+This work is partly funded by Vici grant 639.043.409 from the Dutch Research Council (NWO).
 
 # References
