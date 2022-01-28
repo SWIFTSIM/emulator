@@ -16,22 +16,23 @@ affiliations:
    index: 1
  - name: Department of Physics, Kavli Institute for Astrophysics and Space Research, Massachusetts Institute of Technology, Cambridge, MA 02139, USA
    index: 2
-date: 27 January 2022
+date: 28 January 2022
 bibliography: paper.bib
 
 ---
 
 # Summary
 
-`swift-emulator` is a Python toolkit for using Gaussian processes 
-machine learning to emulate scaling relations from cosmological simulations. 
-`swift-emulator` focusses on having a clear, easy to use design to remove
-the barrier to entry for using emulator techniques. `swift-emulator` provides
-tools for every step along the way, from the design of the parameter sampling,
-to training the Gaussian process and finally anaylsing the trained emulators.
-By making these techniques easier to use, in particular in combination with
-the SWIFT [@Schaller2018; @Borrow2020] it will be possible use fitting methods 
-(like MCMC) to get a better understanding of the models used in the simulations.
+`swift-emulator` is a Python toolkit for using Gaussian processes machine
+learning to emulate scaling relations from cosmological simulations. 
+`swift-emulator` focusses on implementing a clear, easy to use design and API to
+remove the barrier to entry for using emulator techniques. `swift-emulator`
+provides tools for every step: the design of the parameter sampling, the
+training of the Gaussian process model, and validating and anaylsing the trained
+emulators. By making these techniques easier to use, in particular in
+combination with the SWIFT code [@Schaller2018; @Borrow2020], it will be
+possible use fitting methods (like MCMC) to calibrate and better understand
+theoretical simulation models.
 
 # Background
 
@@ -49,12 +50,12 @@ computationally unfeasable. In order to get a statistical grip on the models
 of cosmology and galaxy formation, a better solution is needed.
 
 This problem is a major limiting factor in "calibration" of the sub-resolution
-(subgrid) models that are often used. Works like [@Vogelsberger2014; @Crain2015
-@McCarthy2017; @Pillepich2018] are able to "match" observed relations
-by eye, but a statistical ground for the chosen parameters is missing. This
-poses a signifcant problem for cosmology, where a deeper understanding of our
-subgrid models will be required to understand upcoming surveys like LSST and
-EUCLID.
+(subgrid) models that are often used. Works like Illustris, EAGLE, BAHAMAS, and
+Illustris-TNG [@Vogelsberger2014; @Crain2015; @McCarthy2017; @Pillepich2018] are
+able to "match" observed relations by eye, but a statistical ground for the
+chosen parameters is missing. This poses a signifcant problem for cosmology,
+where a deeper understanding of our subgrid models will be required to
+interpret results from upcoming surveys like LSST and EUCLID.
 
 A solution here comes trough the use of machine learning techniques. Training
 'emulators' on a limited amount of simulations enables the evaluation of a
@@ -145,7 +146,14 @@ project for the calibration of postprocessing models.
 
 # Acknowledgements
 
-We acknowledge support from the SWIFT collaboration whilst developing this project.
-This work is partly funded by Vici grant 639.043.409 from the Dutch Research Council (NWO).
+We acknowledge support from the SWIFT collaboration whilst developing this
+project, with notable involvement from Richard Bower, Ian Vernon, and Matthieu
+Schaller. This work is partly funded by Vici grant 639.043.409 from the Dutch
+Research Council (NWO). This work used the DiRAC@Durham facility managed by the
+Institute for Computational Cosmology on behalf of the STFC DiRAC HPC Facility
+(www.dirac.ac.uk). The equipment was funded by BEIS capital funding via STFC
+capital grants ST/K00042X/1, ST/P002293/1, ST/R002371/1 and ST/S002502/1, Durham
+University and STFC operations grant ST/R000832/1. DiRAC is part of the National
+e-Infrastructure.
 
 # References
