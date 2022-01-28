@@ -9,8 +9,10 @@ tags:
 authors:
   - name: Roi Kugel^[co-first author] # note this makes a footnote saying 'co-first author'
     affiliation: "1" # (Multiple affiliations must be quoted)
+    orcid: 0000-0003-0862-8639
   - name: Josh Borrow^[co-first author] # note this makes a footnote saying 'co-first author'
     affiliation: 2
+    orcid: 0000-0002-1327-1921
 affiliations:
  - name: Leiden Observatory, Leiden University, PO Box 9513, NL-2300 RA Leiden, The Netherlands
    index: 1
