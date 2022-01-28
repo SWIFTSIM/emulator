@@ -76,7 +76,7 @@ itself, and $\vec\theta$ are the model parameters for that given
 simulation. For each simulation many of these individual scaling relations can be
 calculated, for example the sizes of galaxies relative to their stellar mass,
 or the mass fraction of gas in galaxies clusters as a function of their mass. The
-gas fraction as a function of cluster mass can be meassured
+individual object properties used in scaling realtions can be measured
 from each individual simulation using a tool like VELOCIraptor [@Elahi2019].
 
 Between simulations, the underlying parameters $\vec\theta$ can change,
