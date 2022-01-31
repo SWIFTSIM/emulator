@@ -4,6 +4,7 @@ SWIFT Emulator
 [![Documentation Status](https://readthedocs.org/projects/swiftemulator/badge/?version=latest)](https://swiftemulator.readthedocs.io/en/latest/?badge=latest)
 ![Test Status](https://github.com/swiftsim/emulator/actions/workflows/pytest.yml/badge.svg)
 [![PyPI version](https://badge.fury.io/py/swiftemulator.svg)](https://badge.fury.io/py/swiftemulator)
+[![status](https://joss.theoj.org/papers/61d082196ef861cc0b612486c1fa6d40/status.svg)](https://joss.theoj.org/papers/61d082196ef861cc0b612486c1fa6d40)
 
 The SWIFT emulator (henceforth 'the emulator') was initially designed for [SWIFT](http://swift.dur.ac.uk)
 outputs, and includes utilities to read and write SWIFT data.
