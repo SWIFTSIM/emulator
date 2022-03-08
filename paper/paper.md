@@ -34,7 +34,7 @@ combination with the SWIFT code [@Schaller2018; @Borrow2020], it will be
 possible use fitting methods (like MCMC) to calibrate and better understand
 theoretical simulation models.
 
-# Background
+# Statement of need
 
 One of the limits of doing cosmological (hydrodynamical) simulations is
 that any simulation is limited to only a single set of parameters, be these
