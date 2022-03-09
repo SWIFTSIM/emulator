@@ -178,7 +178,7 @@ class GaussianProcessEmulator(BaseEmulator):
         if self.kernel is None:
             number_of_kernel_dimensions = model_specification.number_of_parameters + 1
 
-            self.kernel = 1 ** 2 * george.kernels.ExpSquaredKernel(
+            self.kernel = 1**2 * george.kernels.ExpSquaredKernel(
                 np.ones(number_of_kernel_dimensions), ndim=number_of_kernel_dimensions
             )
 
