@@ -7,6 +7,28 @@ In this section the basics of using the SWIFT-Emulator will
 be explained, with examples of how to make your first GP 
 predictions.
 
+Installation
+------------
+
+The package can be installed easily from PyPI under the name `swiftemulator`,
+so:
+
+``pip3 install swiftemulator``
+
+This will install all necessary dependencies.
+
+The package can be installed from source, by cloning the repository and
+then using `pip install -e .` for development purposes.
+
+Requirements
+------------
+
+The package requires a number of numerical and experimental design packages.
+These have been tested (and are continuously tested) using GitHub actions CI
+to use the latest versions available on PyPI. See `requirements.txt` for
+details for the packages required to develop SWIFT Emulator. The packages
+will be installed automatically by `pip` when installing from PyPI.
+
 Loading data
 ------------
 
