@@ -37,6 +37,7 @@ setuptools.setup(
         "scikit-learn",
         "corner",
         "velociraptor",
+        "pyyaml",
     ],
     include_package_data=True,
 )
