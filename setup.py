@@ -38,6 +38,7 @@ setuptools.setup(
         "corner",
         "velociraptor",
         "pyyaml",
+        "pyDOE",
     ],
     include_package_data=True,
 )
