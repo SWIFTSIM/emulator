@@ -36,6 +36,7 @@ setuptools.setup(
         "SALib",
         "scikit-learn",
         "corner",
+        "velociraptor",
     ],
     include_package_data=True,
 )
