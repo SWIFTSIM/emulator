@@ -39,6 +39,7 @@ setuptools.setup(
         "velociraptor",
         "pyyaml",
         "pyDOE",
+        "tqdm",
     ],
     include_package_data=True,
 )
