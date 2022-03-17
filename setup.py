@@ -40,6 +40,7 @@ setuptools.setup(
         "pyyaml",
         "pyDOE",
         "tqdm",
+        "emcee",
     ],
     include_package_data=True,
 )
