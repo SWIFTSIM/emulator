@@ -188,7 +188,7 @@ class ModelParameters(object):
             corner_kwargs = {}
 
         corner.corner(
-            xs=corner_data,
+            corner_data,
             labels=model_specification.parameter_printable_names,
             range=model_specification.parameter_limits,
             plot_contours=False,
