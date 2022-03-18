@@ -4,9 +4,53 @@ Analysis tools
 Here we will outline some of the available
 tools that can help inspect the performance
 of the emulator. The example data will be
-the Schecter function example.
+the Schecter function example:
 
+.. code-block:: python
 
+    import swiftemulator as se
+    from swiftemulator.emulators import gaussian_process
+    import numpy as np
+
+    def log_schecter_function(log_M, log_M_star, alpha):
+        M = 10 ** log_M
+        M_star = 10 ** log_M_star
+        return np.log10( (1 / M_star) * (M / M_star) ** alpha * np.exp(- M / M_star ))
+
+    model_specification = se.ModelSpecification(
+        number_of_parameters=2,
+        parameter_names=["log_M_star","alpha"],
+        parameter_limits=[[11.,12.],[-1.,-3.]],
+        parameter_printable_names=["Mass at knee","Low mass slope"],
+    )
+
+    log_M_star = np.random.uniform(11., 12., 100)
+    alpha      = np.random.uniform(-1., -3., 100)
+
+    modelparameters = {}
+    for unique_identifier in range(100):
+        modelparameters[unique_identifier] = {"log_M_star": log_M_star[unique_identifier],
+                                            "alpha": alpha[unique_identifier]}
+
+    model_parameters = se.ModelParameters(model_parameters=modelparameters)
+
+    modelvalues = {}
+    for unique_identifier in range(100):
+        independent = np.linspace(10,12,10)
+        dependent = log_schecter_function(independent,
+                                        log_M_star[unique_identifier],
+                                        alpha[unique_identifier])
+        dependent_error = 0.02 * dependent
+        modelvalues[unique_identifier] = {"independent": independent,
+                                        "dependent": dependent,
+                                        "dependent_error": dependent_error}
+
+    model_values = se.ModelValues(model_values=modelvalues)
+
+    schecter_emulator = gaussian_process.GaussianProcessEmulator()
+    schecter_emulator.fit_model(model_specification=model_specification,
+                                model_parameters=model_parameters,
+                                model_values=model_values)
 
 Cross checks
 ------------
@@ -52,6 +96,8 @@ to compare the cross-check predictions with the original
 data.
 
 .. code-block:: python
+
+    import matplotlib.pyplot as plt
 
     data_by_cc = schecter_ccheck.build_mocked_model_values_original_independent()
 

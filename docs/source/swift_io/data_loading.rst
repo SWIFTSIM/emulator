@@ -26,10 +26,10 @@ the data files. This can easily be obtained using
     from pathlib import Path
 
     parameter_files = [Path(x) for x in glob("./emulator_output/input_data/*.yml")]
-    parameter_filenames = {filename.stem: filename for filename in files}
+    parameter_filenames = {filename.stem: filename for filename in parameter_files}
 
     data_files = [Path(x) for x in glob("./emulator_output/output_data/*.yml")]
-    data_filenames = {filename.stem: filename for filename in value_files}
+    data_filenames = {filename.stem: filename for filename in data_files}
 
 For the parameter we use
 :meth:`swiftemulator.io.swift.load_parameter_files`.
@@ -90,7 +90,7 @@ the x or y to be loaded in log-space.
 .. code-block:: python
 
     values, units = load_pipeline_outputs(
-        filenames=filenames,
+        filenames=data_filenames,
         scaling_relations=["stellar_mass_function_100"],
         log_independent=["stellar_mass_function_100"],
         log_dependent=["stellar_mass_function_100"],
