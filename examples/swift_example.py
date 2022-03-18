@@ -16,8 +16,9 @@ from swiftemulator.emulators.gaussian_process import GaussianProcessEmulator
 from swiftemulator.mean_models import LinearMeanModel
 from swiftemulator.mocking import mock_hypercube
 from velociraptor.observations import load_observations
-from swiftemulator.comparison import continuous_model_offset_from_observation
-from swiftemulator.comparison.visualisation import visualise_offsets_mean
+from swiftemulator.comparison.penalty import L2PenaltyCalculator
+from swiftemulator.comparison.visualisation import visualise_penalties_mean
+from unyt import Msun, Mpc
 
 from glob import glob
 from pathlib import Path
@@ -85,19 +86,24 @@ observation = load_observations(
     "./observational_data/data/GalaxyStellarMassFunction/Vernon.hdf5"
 )[0]
 
-offsets = continuous_model_offset_from_observation(
-    model_values=scaling_relation,
-    observation=observation,
-    unit_dict=scaling_relation_units,
-    model_difference_range=[9.0, 11.0],
+# First we register the observations into the penalty function
+L2_penalty = L2PenaltyCalculator(offset=0.5, lower=9, upper=12)
+L2_penalty.register_observation(
+    observation,
+    log_independent=True,
+    log_dependent=True,
+    independent_units=Msun,
+    dependent_units=Mpc**-3,
 )
 
+# Then calculate the penalties
+all_penalties = L2_penalty.penalties(scaling_relation, np.mean)
+
 # Need to format the data for `corner` now.
-fig, axes = visualise_offsets_mean(
+fig, axes = visualise_penalties_mean(
     model_specification=spec,
-    model_values=scaling_relation,
     model_parameters=parameters,
-    offsets=offsets,
+    penalties=all_penalties,
 )
 
 fig.tight_layout(h_pad=0.05, w_pad=0.05)
@@ -128,20 +134,25 @@ observation = load_observations(
     "./observational_data/data/GalaxyStellarMassFunction/Vernon.hdf5"
 )[0]
 
-offsets = continuous_model_offset_from_observation(
-    model_values=mock_values,
-    observation=observation,
-    unit_dict=scaling_relation_units,
-    model_difference_range=[9.0, 11.0],
+# First we register the observations into the penalty function
+L2_penalty = L2PenaltyCalculator(offset=0.5, lower=9, upper=12)
+L2_penalty.register_observation(
+    observation,
+    log_independent=True,
+    log_dependent=True,
+    independent_units=Msun,
+    dependent_units=Mpc**-3,
 )
+
+# Then calculate the penalties
+all_penalties = L2_penalty.penalties(mock_values, np.mean)
 
 # Need to format the data for `corner` now.
 
-fig, axes = visualise_offsets_mean(
+fig, axes = visualise_penalties_mean(
     model_specification=spec,
-    model_values=mock_values,
     model_parameters=mock_parameters,
-    offsets=offsets,
+    penalties=all_penalties,
 )
 
 fig.tight_layout(h_pad=0.05, w_pad=0.05)
@@ -150,7 +161,7 @@ fig.savefig("mocked_simulation_corner_test.png")
 # Finally, let's make a plot showing the 'best' model
 # according to our metric!
 
-best_key, best_value = min(offsets.items(), key=lambda x: x[1])
+best_key, best_value = min(all_penalties.items(), key=lambda x: x[1])
 best_sim = mock_values.model_values[best_key]
 best_sim_parameters = mock_parameters.model_parameters[best_key]
 closest_true, _ = parameters.find_closest_model(
