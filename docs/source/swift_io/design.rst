@@ -4,7 +4,9 @@ Experimental Design
 One part of SWIFT-Emulator's i/o features is
 the ability to generate Latin Hypercube (LH)
 designs and save them to SWIFT parameter files,
-one file for each set of parameters.
+one file for each set of parameters. For this
+example you will need to download some data
+from `http://virgodb.cosma.dur.ac.uk/swift-webstorage/IOExamples/emulator_output.zip`.
 
 We do this by combining the :meth:`swiftemulator.design`
 with :meth:`swiftemulator.io.swift`. First we have 
@@ -76,13 +78,14 @@ parameters that we want to vary. This is
 because we provide `write_parameter_files`
 with a base parameter file. This file
 should hold the base values for all
-other parameters.
+other parameters. Example parameter files
+can be found on the main `SWIFT` repository.
+For this example we will use one of the
+parameter files from the example hypercube.
 
 .. code-block:: python
 
-    #The eagle_25.yml parameter file can be found in
-    #one of the SWIFT examples.
-    base_parameter_file = "eagle_25.yml"
+    base_parameter_file = "emulator_output/input_data/1.yml"
     output_path = "."
 
     write_parameter_files(
