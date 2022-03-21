@@ -93,7 +93,7 @@ L2_penalty.register_observation(
     log_independent=True,
     log_dependent=True,
     independent_units=Msun,
-    dependent_units=Mpc ** -3,
+    dependent_units=Mpc**-3,
 )
 
 # Then calculate the penalties
@@ -142,7 +142,7 @@ L2_penalty.register_observation(
     log_independent=True,
     log_dependent=True,
     independent_units=Msun,
-    dependent_units=Mpc ** -3,
+    dependent_units=Mpc**-3,
 )
 
 # Then calculate the penalties
