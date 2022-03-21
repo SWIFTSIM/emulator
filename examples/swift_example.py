@@ -17,7 +17,7 @@ from swiftemulator.mean_models import LinearMeanModel
 from swiftemulator.mocking import mock_hypercube
 from velociraptor.observations import load_observations
 from swiftemulator.comparison.penalty import L2PenaltyCalculator
-from swiftemulator.comparison.visualisation import visualise_penalties_mean
+from swiftemulator.comparison.visualisation import visualise_penalties_generic_statistic
 from unyt import Msun, Mpc
 
 from glob import glob
@@ -100,10 +100,11 @@ L2_penalty.register_observation(
 all_penalties = L2_penalty.penalties(scaling_relation, np.mean)
 
 # Need to format the data for `corner` now.
-fig, axes = visualise_penalties_mean(
+fig, axes = visualise_penalties_generic_statistic(
     model_specification=spec,
     model_parameters=parameters,
     penalties=all_penalties,
+    statistic="mean",
 )
 
 fig.tight_layout(h_pad=0.05, w_pad=0.05)
@@ -149,10 +150,11 @@ all_penalties = L2_penalty.penalties(mock_values, np.mean)
 
 # Need to format the data for `corner` now.
 
-fig, axes = visualise_penalties_mean(
+fig, axes = visualise_penalties_generic_statistic(
     model_specification=spec,
     model_parameters=mock_parameters,
     penalties=all_penalties,
+    statistic="mean",
 )
 
 fig.tight_layout(h_pad=0.05, w_pad=0.05)
