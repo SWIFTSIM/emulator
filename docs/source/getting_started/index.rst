@@ -186,11 +186,14 @@ model.
 .. code-block:: python
 
     import matplotlib.pyplot as plt
-    plt.plot(predict_x,pred)
+    plt.plot(predict_x,pred,label="Emulator")
     plt.plot(predict_x,log_schecter_function(predict_x,
                                             predictparams["log_M_star"]
                                             ,predictparams["alpha"])
-            ,color="black",ls=":")
+            ,color="black",ls=":",label="Model")
+    plt.xlabel("Stellar mass")
+    plt.ylabel("dn/dlogM")
+    plt.legend()
 
 Which shows that the emulator can predict the model with
 high accuracy.

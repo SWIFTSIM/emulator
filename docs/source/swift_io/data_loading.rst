@@ -89,6 +89,8 @@ the x or y to be loaded in log-space.
 
 .. code-block:: python
 
+    from swiftemulator.io.swift import load_pipeline_outputs
+
     values, units = load_pipeline_outputs(
         filenames=data_filenames,
         scaling_relations=["stellar_mass_function_100"],
@@ -110,6 +112,8 @@ At this point the data is loaded and you can build
 and train your emulator.
 
 .. code-block:: python
+
+    from swiftemulator.emulators import gaussian_process
 
     emulator = GaussianProcessEmulator()
     emulator.fit_model(model_specification=spec,

@@ -45,15 +45,15 @@ These parameters need to be tuned to calibrate against observational data.
 At odds with this, cosmological simulations are computationally expensive,
 with the cheapest viable runs costing thousands of CPU hours, and running up to
 tens of millions for the largest volumes at the highest resolutions.
-This makes the use of cosmological simulations in state of the of the art
+This makes the use of cosmological simulations in state-of-the-art
 fitting pipelines (e.g. MCMC), where tens of thousands to millions of
 evaluations of the model are required to explore the parameter space,
 computationally unfeasable. In order to get a statistical grip on the models
 of cosmology and galaxy formation, a better solution is needed.
 
 This problem is a major limiting factor in "calibration" of the sub-resolution
-(subgrid) models that are often used. Works like Illustris, EAGLE, BAHAMAS, and
-Illustris-TNG [@Vogelsberger2014; @Crain2015; @McCarthy2017; @Pillepich2018] are
+(subgrid) models that are often used. Works like Illustris [@Vogelsberger2014], 
+EAGLE [@Crain2015], BAHAMAS [@McCarthy2017], and Illustris-TNG [@Pillepich2018] are
 able to "match" observed relations by eye, but a statistical ground for the
 chosen parameters is missing. This poses a signifcant problem for cosmology,
 where a deeper understanding of our subgrid models will be required to
@@ -68,14 +68,14 @@ makes it feasable to use methods like MCMC based purely on simulation results.
 
 # Emulator Requirements
 
-For emulation in hydro simulations we are most interested in emulating
-scaling relations of the following form:
+For emulation in hydro simulations we want to use Gaussian processes to
+emulate scaling relations in the following form:
 
-$$f(x,\vec\theta)$$
+$$GP(y,x,\theta).$$
 
-where $x$ is the independent variable measured within the simulation
-itself, and $\vec\theta$ are the model parameters for that given 
-simulation. For each simulation many of these individual scaling relations can be
+We want to emulate scaling relations between a dependent variable $y$,
+as a function of the independent variable $x$ and the model parameters
+$\theta$. For each simulation many of these individual scaling relations can be
 calculated, for example the sizes of galaxies relative to their stellar mass,
 or the mass fraction of gas in galaxy clusters as a function of their mass. The
 individual object properties used in scaling realtions can be measured
@@ -86,10 +86,10 @@ for instance the energy injected by each supernovae.
 Using an emulator, we want to be able to see how many scaling relations
 change as a function of these parameters like the supernova strength.
 
-This distinction between the values obtained from
-the simulation and the parameters of the simulation model is absent
-when setting up a typical emulator, and hence setting up the training data
-correctly can pose a significant challenge.
+Emulators do not make a distinction between the independent $x$
+and the model parameters $theta$. An emulator will model $y$ as a
+function of the combined vector $\theta'=(x,\theta)$. Getting the training
+data in the correct format can pose a significant challenge.
 
 In order to save computational time, it is important
 to have an efficient sampling of the parameter space represented by $\vec\theta$. 
@@ -104,7 +104,7 @@ by hand, making proper use of emulators more difficult.
 
 # Why `swift-emulator`?
 
-Many packages cexist for Gausian process emulation, like
+Many packages exist for Gausian process emulation, like
 `george` (@Ambikasaran2015; this provides the basis for `swift-emulator`),
 `gpytorch` [@Gardner2018] and `GPy` [@gpy2014]. Additionally, a package like
 `pyDOE` [@pyDOE2012] can be used to set up efficient parameter samplings.
@@ -135,7 +135,7 @@ relations with other data, from a simple $\chi^2$ method to complex model
 discrepancy structures.
 
 `swift-emulator` is currently being used for two of the flagship simulation
-projects using the SWIFT simulation code, ranging accros five orders of 
+projects using the SWIFT simulation code, ranging across five orders of 
 magnitude in mass resolution. The package is being used to allow modern
 simulations to reporduce key observations with high accuracy.
 
@@ -149,10 +149,10 @@ project for the calibration of postprocessing models.
 # Acknowledgements
 
 We acknowledge support from the SWIFT collaboration whilst developing this
-project, with notable involvement from Richard Bower, Ian Vernon, and Matthieu
-Schaller. This work is partly funded by Vici grant 639.043.409 from the Dutch
-Research Council (NWO). This work used the DiRAC@Durham facility managed by the
-Institute for Computational Cosmology on behalf of the STFC DiRAC HPC Facility
+project, with notable involvement from Richard Bower, Ian Vernon, Joop Schaye, 
+and Matthieu Schaller. This work is partly funded by Vici grant 639.043.409 from 
+the Dutch Research Council (NWO). This work used the DiRAC@Durham facility managed 
+by the Institute for Computational Cosmology on behalf of the STFC DiRAC HPC Facility
 (www.dirac.ac.uk). The equipment was funded by BEIS capital funding via STFC
 capital grants ST/K00042X/1, ST/P002293/1, ST/R002371/1 and ST/S002502/1, Durham
 University and STFC operations grant ST/R000832/1. DiRAC is part of the National
