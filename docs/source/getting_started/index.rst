@@ -26,7 +26,7 @@ Requirements
 The package requires a number of numerical and experimental design packages.
 These have been tested (and are continuously tested) using GitHub actions CI
 to use the latest versions available on PyPI. See `requirements.txt` for
-details for the packages required to develop SWIFT Emulator. The packages
+details for the packages required to develop SWIFT-Emulator. The packages
 will be installed automatically by `pip` when installing from PyPI.
 
 Loading data

@@ -1,4 +1,4 @@
-SWIFT Emulator
+SWIFT-Emulator
 ==============
 
 [![Documentation Status](https://readthedocs.org/projects/swiftemulator/badge/?version=latest)](https://swiftemulator.readthedocs.io/en/latest/?badge=latest)
@@ -6,7 +6,7 @@ SWIFT Emulator
 [![PyPI version](https://badge.fury.io/py/swiftemulator.svg)](https://badge.fury.io/py/swiftemulator)
 [![status](https://joss.theoj.org/papers/61d082196ef861cc0b612486c1fa6d40/status.svg)](https://joss.theoj.org/papers/61d082196ef861cc0b612486c1fa6d40)
 
-The SWIFT emulator (henceforth 'the emulator') was initially designed for [SWIFT](http://swift.dur.ac.uk)
+The SWIFT-emulator (henceforth 'the emulator') was initially designed for [SWIFT](http://swift.dur.ac.uk)
 outputs, and includes utilities to read and write SWIFT data.
 
 The emulator can be used used to predict 
@@ -70,7 +70,7 @@ Requirements
 The package requires a number of numerical and experimental design packages.
 These have been tested (and are continuously tested) using GitHub actions CI
 to use the latest versions available on PyPI. See `requirements.txt` for
-details for the packages required to develop SWIFT Emulator. The packages
+details for the packages required to develop SWIFT-Emulator. The packages
 will be installed automatically by `pip` when installing from PyPI.
 
 

@@ -1,6 +1,6 @@
 """
 An example using the SWIFT i/o functions to demonstrate how a 
-binwise sensitivity analysis is performed using the swift emulator.
+binwise sensitivity analysis is performed using the swift-emulator.
 
 ``http://virgodb.cosma.dur.ac.uk/swift-webstorage/IOExamples/emulator_output.zip``
 """

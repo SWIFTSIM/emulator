@@ -19,7 +19,7 @@ import swiftemulator
 
 # -- Project information -----------------------------------------------------
 
-project = "SWIFT Emulator"
+project = "SWIFT-Emulator"
 copyright = "2021, Josh Borrow & Roi Kugel"
 author = "Josh Borrow & Roi Kugel"
 
