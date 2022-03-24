@@ -71,11 +71,11 @@ makes it feasable to use methods like MCMC based purely on simulation results.
 For emulation in hydro simulations we want to use Gaussian processes to
 emulate scaling relations in the following form:
 
-$$GP(y,x,\theta).$$
+$$GP(y,x,\vec\theta).$$
 
 We want to emulate scaling relations between a dependent variable $y$,
 as a function of the independent variable $x$ and the model parameters
-$\theta$. For each simulation many of these individual scaling relations can be
+$\vec\theta$. For each simulation many of these individual scaling relations can be
 calculated, for example the sizes of galaxies relative to their stellar mass,
 or the mass fraction of gas in galaxy clusters as a function of their mass. The
 individual object properties used in scaling realtions can be measured
@@ -87,8 +87,8 @@ Using an emulator, we want to be able to see how many scaling relations
 change as a function of these parameters like the supernova strength.
 
 Emulators do not make a distinction between the independent $x$
-and the model parameters $theta$. An emulator will model $y$ as a
-function of the combined vector $\theta'=(x,\theta)$. Getting the training
+and the model parameters $\vec\theta$. An emulator will model $y$ as a
+function of the combined vector $\vec\theta'=(x,\vec\theta)$. Getting the training
 data in the correct format can pose a significant challenge.
 
 In order to save computational time, it is important
