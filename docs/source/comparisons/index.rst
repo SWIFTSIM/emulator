@@ -10,7 +10,7 @@ data stored in `velociraptor-comparison-data`
 which can be found 
 `here <https://github.com/SWIFTSIM/velociraptor-comparison-data>`_.
 You can also download just the required ``Vernon.hdf5`` file
-`here <http://virgodb.cosma.dur.ac.uk/swift-webstorage/IOExamples/Vernon.hdf5>`_.
+`instead <http://virgodb.cosma.dur.ac.uk/swift-webstorage/IOExamples/Vernon.hdf5>`_.
 
 In this case we will again use the data from
 `http://virgodb.cosma.dur.ac.uk/swift-webstorage/IOExamples/emulator_output.zip`
