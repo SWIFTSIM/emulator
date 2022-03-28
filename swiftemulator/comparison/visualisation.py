@@ -11,8 +11,14 @@ from swiftemulator.backend.model_values import ModelValues
 
 from typing import Dict, Hashable, Tuple, Iterable, Optional
 from matplotlib.colors import Normalize
-from swiftsimio.visualisation.projection import scatter
 from scipy.stats import binned_statistic_2d
+
+try:
+    from swiftsimio.visualisation.projection import scatter
+
+    swiftsimio_available = True
+except (ImportError, ModuleNotFoundError):
+    swiftsimio_available = False
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -150,25 +156,34 @@ def visualise_penalties_mean(
             do_not_plot = is_center_line and remove_ticks
 
             if not do_not_plot:
-                norm_grid = scatter(
-                    x=ordered_parameters[parameter_x],
-                    y=ordered_parameters[parameter_y],
-                    m=np.ones_like(ordered_penalties),
-                    h=smoothing_lengths,
-                    res=512,
-                )
+                if swiftsimio_available:
+                    norm_grid = scatter(
+                        x=ordered_parameters[parameter_x],
+                        y=ordered_parameters[parameter_y],
+                        m=np.ones_like(ordered_penalties),
+                        h=smoothing_lengths,
+                        res=512,
+                    )
 
-                weighted_grid = scatter(
-                    x=ordered_parameters[parameter_x],
-                    y=ordered_parameters[parameter_y],
-                    m=ordered_penalties,
-                    h=smoothing_lengths,
-                    res=512,
-                )
+                    weighted_grid = scatter(
+                        x=ordered_parameters[parameter_x],
+                        y=ordered_parameters[parameter_y],
+                        m=ordered_penalties,
+                        h=smoothing_lengths,
+                        res=512,
+                    )
 
-                norm_grid[norm_grid == 0.0] = 1.0
+                    norm_grid[norm_grid == 0.0] = 1.0
 
-                ratio_grid = weighted_grid / norm_grid
+                    ratio_grid = weighted_grid / norm_grid
+                else:
+                    norm_grid, _, _, _ = binned_statistic_2d(
+                        x=ordered_parameters[parameter_x],
+                        y=ordered_parameters[parameter_y],
+                        values=ordered_penalties,
+                        statistic="mean",
+                        bins=16,
+                    )
 
                 im = ax.imshow(
                     ratio_grid.T,

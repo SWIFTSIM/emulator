@@ -12,3 +12,4 @@ pyyaml
 pyDOE
 tqdm
 velociraptor
+swiftsimio
