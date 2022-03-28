@@ -49,7 +49,7 @@ spec = ModelSpecification(
     ],
 )
 
-parameter_transforms = {"SNII_energy_fraction_n_0_H_p_cm3": lambda x: 10.0**x}
+parameter_transforms = {"SNII_energy_fraction_n_0_H_p_cm3": lambda x: 10.0 ** x}
 
 model_parameters = latin.create_hypercube(
     model_specification=spec,

@@ -337,7 +337,7 @@ class CrossCheck(object):
                 uniq_mean_squared = y_model - emulated
 
             if use_squared_difference:
-                uniq_mean_squared = uniq_mean_squared**2
+                uniq_mean_squared = uniq_mean_squared ** 2
 
             mean_squared_dict[unique_identifier] = uniq_mean_squared
             total_mean_squared.extend(uniq_mean_squared)

@@ -476,7 +476,7 @@ class L2PenaltyCalculator(PenaltyCalculator):
 
         obs_dependent = self.interpolator_values(independent[valid_data_mask])
 
-        penalties = (obs_dependent - dependent[valid_data_mask]) ** 2 / self.offset**2
+        penalties = (obs_dependent - dependent[valid_data_mask]) ** 2 / self.offset ** 2
 
         return np.minimum(penalties, 1.0)
 
@@ -788,11 +788,11 @@ class GaussianDataErrorsPenaltyCalculator(PenaltyCalculator):
             -0.5
             * (
                 (dependent[valid_data_mask] - obs_dependent) ** 2
-                / (obs_dependent_errors**2)
+                / (obs_dependent_errors ** 2)
             )
         )
 
-        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max**2))
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
         penalties[penalties > sigma_max_mask_value] = 1.0
 
         return np.minimum(penalties, 1.0)
@@ -866,7 +866,7 @@ class GaussianPercentErrorsPenaltyCalculator(PenaltyCalculator):
             )
         )
 
-        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max**2))
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
         penalties[penalties > sigma_max_mask_value] = 1.0
 
         return np.minimum(penalties, 1.0)
@@ -970,13 +970,13 @@ class GaussianDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator):
             * (
                 (dependent[valid_data_mask] - obs_dependent) ** 2
                 / (
-                    obs_dependent_errors**2
+                    obs_dependent_errors ** 2
                     + (obs_dependent * (self.percent_error / 100)) ** 2
                 )
             )
         )
 
-        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max**2))
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
         penalties[penalties > sigma_max_mask_value] = 1.0
 
         return np.minimum(penalties, 1.0)
@@ -1085,13 +1085,13 @@ class GaussianWeightedDataErrorsPercentFloorPenaltyCalculator(PenaltyCalculator)
             * (
                 (dependent[valid_data_mask] - obs_dependent) ** 2
                 / (
-                    obs_dependent_errors**2
+                    obs_dependent_errors ** 2
                     + (obs_dependent * (self.percent_error / 100)) ** 2
                 )
             )
         )
 
-        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max**2))
+        sigma_max_mask_value = 1.0 - np.exp(-0.5 * (self.sigma_max ** 2))
         penalties[penalties > sigma_max_mask_value] = 1.0
 
         return np.minimum(penalties, 1.0)
