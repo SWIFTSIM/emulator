@@ -90,7 +90,7 @@ parameter files from the example hypercube.
 
     write_parameter_files(
     filenames={
-        key: output_path / f"{key}.yml"
+        key: f"{output_path} / {key}.yml"
         for key in model_parameters.model_parameters.keys()
     },
     model_parameters=model_parameters,

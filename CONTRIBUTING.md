@@ -1,7 +1,7 @@
-Contributing to SWIFT Emulator
+Contributing to SWIFT-Emulator
 ==============================
 
-Contributions for the SWIFT Emulator should come through our GitHub repository,
+Contributions for the SWIFT-Emulator should come through our GitHub repository,
 available at https://github.com/swiftsim/emulator.
 
 Contributions are always welcome, but you should make sure of the following:
@@ -52,7 +52,7 @@ As members of the community,
 + We pledge to help the entire community follow the code of conduct, and to
   not remain silent when we see violations of the code of conduct. We will
   take action when members of our community violate this code such as
-  contacting josh@joshborrow.com with the subject line SWIFT emulator Code
+  contacting josh@joshborrow.com with the subject line SWIFT-emulator Code
   of Conduct (all emails sent in this fashion will be treated with the
   strictest confidence) or talking privately with the person.
 + This code of conduct applies to all community situations online and

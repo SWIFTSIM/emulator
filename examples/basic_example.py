@@ -1,5 +1,5 @@
 """
-A quick example of how to use the swift emulator to 'predict'
+A quick example of how to use the swift-emulator to 'predict'
 values in a non-linear model.
 """
 
@@ -24,7 +24,7 @@ def my_true_model(x, offset):
     """
     A basic non-linear model.
     """
-    return offset + offset**2 * x**0.5
+    return offset + offset ** 2 * x ** 0.5
 
 
 model_specification = se.ModelSpecification(

@@ -135,13 +135,15 @@ This is implemented into the SWIFT-Emulator with
 
     Mock_values, Mock_parameters = mock_sweep(schecter_emulator
                                           ,model_specification
-                                          ,10,"alpha",center)
+                                          ,6,"alpha",center)
 
     for mock_name in Mock_values.keys():
         plt.plot(Mock_values[mock_name]["independent"],
                 Mock_values[mock_name]["dependent"],
-                label = str(Mock_parameters[mock_name]["alpha"])[:4])
-        
+                label = "Alpha = " +str(Mock_parameters[mock_name]["alpha"])[:4])
+
+    plt.xlabel("Stellar mass")
+    plt.ylabel("dn/dlogM")    
     plt.legend()
     plt.savefig("parameter_sweep.png",dpi=200)
 

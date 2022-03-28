@@ -127,7 +127,7 @@ emulator and the data.
                                 ,independent_units=Msun
                                 ,dependent_units=Mpc**-3)
 
-    L2_penalty.plot_penalty(9,12,-6,-1,"penalty_example")
+    L2_penalty.plot_penalty(9,12,-6,-1,"penalty_example",x_label="Stellar mass",y_label="dn/dlogM")
 
 .. image:: penalty_example.png
 
@@ -218,7 +218,7 @@ term.
     my_penalty.register_observation(observation,log_independent=True,log_dependent=True
                                 ,independent_units=Msun,dependent_units=Mpc**-3)
 
-    my_penalty.plot_penalty(9,12,-6,-1,"my_penalty")
+    my_penalty.plot_penalty(9,12,-6,-1,"my_penalty",x_label="Stellar mass",y_label="dn/dlogM")
 
 .. image:: example_penalty_example.png
 

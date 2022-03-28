@@ -1,4 +1,4 @@
-Welcome to SWIFT Emulator's Documentation
+Welcome to SWIFT-Emulator's Documentation
 =========================================
 
 The SWIFT-Emulator is a python toolkit for using Gaussian
