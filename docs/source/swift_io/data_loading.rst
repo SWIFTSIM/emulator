@@ -115,7 +115,7 @@ and train your emulator.
 
     from swiftemulator.emulators import gaussian_process
 
-    emulator = GaussianProcessEmulator()
+    emulator = gaussian_process.GaussianProcessEmulator()
     emulator.fit_model(model_specification=spec,
         model_parameters=parameters,
         model_values=scaling_relation,
