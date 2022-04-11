@@ -4,7 +4,7 @@ attrs
 george
 SALib
 pytest
-scikit-learn
+scikit - learn
 corner
 emcee
 black
