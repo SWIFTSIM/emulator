@@ -40,13 +40,13 @@ theoretical simulation models.
 
 One of the limits of doing cosmological (hydrodynamical) simulations is
 that any simulation is limited to only a single set of parameters, be these
-choices of cosmology, or the implemented physics (e.g. stellar feedback).
+choices of cosmology, or the implemented physics (e.g., stellar feedback).
 These parameters need to be tuned to calibrate against observational data.
 At odds with this, cosmological simulations are computationally expensive,
 with the cheapest viable runs costing thousands of CPU hours, and running up to
 tens of millions for the largest volumes at the highest resolutions.
 This makes the use of cosmological simulations in state-of-the-art
-fitting pipelines (e.g. MCMC), where tens of thousands to millions of
+fitting pipelines (e.g., MCMC), where tens of thousands to millions of
 evaluations of the model are required to explore the parameter space,
 computationally unfeasable. In order to get a statistical grip on the models
 of cosmology and galaxy formation, a better solution is needed.
@@ -59,7 +59,7 @@ chosen parameters is missing. This poses a signifcant problem for cosmology,
 where a deeper understanding of our subgrid models will be required to
 interpret results from upcoming surveys like LSST and EUCLID.
 
-A solution here comes trough the use of machine learning techniques. Training
+A solution here comes through the use of machine learning techniques. Training
 'emulators' on a limited amount of simulations enables the evaluation of a
 fully continuous model based on changes in the underlying parameters. Instead
 of performing a new simulation for each required datapoint, the emulator can
