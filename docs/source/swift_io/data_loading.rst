@@ -108,6 +108,12 @@ scaling relation. A `ModelValues` container for a
 single relation can be obtained by parsing it with
 the correct name.
 
+In addition to the basic dependent errors available,
+we also provide the ability to use a histogram
+through the parameter `histogram_for_error`, which returns
+errors that are `1 / sqrt(N)` for all scaling relations loaded
+in that same call.
+
 At this point the data is loaded and you can build
 and train your emulator.
 
