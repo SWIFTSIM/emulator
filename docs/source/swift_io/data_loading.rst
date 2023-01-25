@@ -114,6 +114,12 @@ through the parameter `histogram_for_error`, which returns
 errors that are `1 / sqrt(N)` for all scaling relations loaded
 in that same call.
 
+Finally, you can use the option `sanitize_output=True`, which
+will sanitize the arrays read from disk. This is helpful for
+avoiding `-inf` when log-scaling data that may contain zeros.
+This sanitization just removes the data points that have
+non-numeric values, but is off by default.
+
 At this point the data is loaded and you can build
 and train your emulator.
 
