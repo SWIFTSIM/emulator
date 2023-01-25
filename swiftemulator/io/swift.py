@@ -89,6 +89,11 @@ def load_pipeline_outputs(
 
     unit_dict = {scaling_relation: {} for scaling_relation in scaling_relations}
 
+    if log_independent is None:
+        log_independent = []
+    if log_dependent is None:
+        log_dependent = []
+
     # Need to search for possible keys within the `lines` dictionary.
     # Priority given by ordering of line_types
     line_types = [
