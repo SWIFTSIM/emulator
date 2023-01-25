@@ -138,8 +138,6 @@ def load_pipeline_outputs(
                 unit_dict[scaling_relation]["log_independent"] = False
 
             if scaling_relation in log_dependent:
-                dependent = np.log10(dependent)
-
                 if histogram_for_error:
                     # Need to curtail at end because of bins that contain the unbinnable galaxies
                     dependent_error = np.log10(
@@ -154,6 +152,7 @@ def load_pipeline_outputs(
                         lower = dependent - dependent_error
                         upper = dependent + dependent_error
 
+                    dependent = np.log10(dependent)
                     upper_diff = np.log10(upper) - dependent
                     lower_diff = dependent - np.log10(lower)
 
