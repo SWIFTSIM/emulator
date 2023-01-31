@@ -150,7 +150,8 @@ class LinearModelEmulator(BaseEmulator):
             )
 
         if self.lasso_model_alpha == 0.0:
-            linear_model = lm.LinearRegression(fit_intercept=True, normalize=True)
+            # Normalize was removed.
+            linear_model = lm.LinearRegression(fit_intercept=True)
         else:
             linear_model = lm.Lasso(alpha=self.lasso_model_alpha)
 

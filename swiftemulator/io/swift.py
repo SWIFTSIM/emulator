@@ -27,6 +27,8 @@ def load_pipeline_outputs(
     scaling_relations: List[str],
     log_independent: Optional[List[str]] = None,
     log_dependent: Optional[List[str]] = None,
+    histogram_for_error: Optional[str] = None,
+    sanitize_output: bool = False,
 ) -> Tuple[Dict[str, ModelValues], Dict[str, Dict[str, Union[str, bool]]]]:
     """
     Loads the pipeline outputs from the provided files, for
@@ -55,6 +57,20 @@ def load_pipeline_outputs(
         the dependent values (given by ``values`` in the yaml files)
         should be log-scaled (uses ``log10``).
 
+    histogram_for_error: str, optional
+        If provided, a histogram to use for sampling-based errors on each
+        bin. This can be beneficial versus the scatter-based default errors
+        when there is significant intrinsic scatter. Errors are reported
+        as ``dependent / sqrt(N)`` (or ``log(1 + 1 / sqrt(N)`` in the
+        case of log-scaled). Note that you _must_ ensure consistent binning
+        between the other input scaling relations and this histogram, or
+        there will be an error.
+
+    sanitize_output: bool, optional
+        If set to True, removes all zero-valued, infinity, and NaN dependent and
+        independent values from the data. This helps sanitize input for the
+        emulator, but is slower.
+
     Returns
     -------
 
@@ -73,6 +89,11 @@ def load_pipeline_outputs(
 
     unit_dict = {scaling_relation: {} for scaling_relation in scaling_relations}
 
+    if log_independent is None:
+        log_independent = []
+    if log_dependent is None:
+        log_dependent = []
+
     # Need to search for possible keys within the `lines` dictionary.
     # Priority given by ordering of line_types
     line_types = [
@@ -80,6 +101,7 @@ def load_pipeline_outputs(
         "mass_function",
         "mean",
         "adaptive_mass_function",
+        "histogram",
     ]
     recursive_search = (
         lambda d, k: d.get(k[0], recursive_search(d, k[1:])) if len(k) > 0 else None
@@ -89,6 +111,11 @@ def load_pipeline_outputs(
     for unique_identifier, filename in filenames.items():
         with open(filename, "r") as handle:
             raw_data = yaml.safe_load(handle)
+
+        if histogram_for_error is not None:
+            line = raw_data[histogram_for_error]["lines"]["histogram"]
+            number_of_items = np.array(line["values"])
+            inverse_square_root_error = 1.0 / np.sqrt(number_of_items)
 
         for scaling_relation in scaling_relations:
             line = line_search(raw_data[scaling_relation]["lines"])
@@ -111,32 +138,55 @@ def load_pipeline_outputs(
                 unit_dict[scaling_relation]["log_independent"] = False
 
             if scaling_relation in log_dependent:
-                # Handle case of dependent errors needing to be logged.
-                if dependent_error.ndim > 1:
-                    lower = dependent - dependent_error[0, :]
-                    upper = dependent + dependent_error[1, :]
+                if histogram_for_error:
+                    # Need to curtail at end because of bins that contain the unbinnable galaxies
+                    dependent_error = np.log10(
+                        1.0 + inverse_square_root_error[: len(dependent)]
+                    )
                 else:
-                    lower = dependent - dependent_error
-                    upper = dependent + dependent_error
+                    # Handle case of dependent errors needing to be logged.
+                    if dependent_error.ndim > 1:
+                        lower = dependent - dependent_error[0, :]
+                        upper = dependent + dependent_error[1, :]
+                    else:
+                        lower = dependent - dependent_error
+                        upper = dependent + dependent_error
 
-                dependent = np.log10(dependent)
+                    dependent = np.log10(dependent)
+                    upper_diff = np.log10(upper) - dependent
+                    lower_diff = dependent - np.log10(lower)
 
-                upper_diff = np.log10(upper) - dependent
-                lower_diff = dependent - np.log10(lower)
-
-                dependent_error = 0.5 * (upper_diff + lower_diff)
+                    dependent_error = 0.5 * (upper_diff + lower_diff)
 
                 unit_dict[scaling_relation]["log_dependent"] = True
             else:
                 unit_dict[scaling_relation]["log_dependent"] = False
 
-                if dependent_error.ndim > 1:
-                    dependent_error = np.mean(dependent_error, axis=0)
+                if histogram_for_error:
+                    dependent_error = (
+                        dependent * inverse_square_root_error[: len(dependent)]
+                    )
+                else:
+                    if dependent_error.ndim > 1:
+                        # Only need to average if multi-dimensional, otherwise we just inherit
+                        # from above.
+                        dependent_error = np.mean(dependent_error, axis=0)
+
+            if sanitize_output:
+                sanitization_mask = np.logical_and.reduce(
+                    [
+                        np.isfinite(independent),
+                        np.isfinite(dependent),
+                        np.isfinite(dependent_error),
+                    ]
+                )
+            else:
+                sanitization_mask = np.s_[:]
 
             model_values[scaling_relation][unique_identifier] = {
-                "independent": independent,
-                "dependent": dependent,
-                "dependent_error": dependent_error,
+                "independent": independent[sanitization_mask],
+                "dependent": dependent[sanitization_mask],
+                "dependent_error": dependent_error[sanitization_mask],
             }
 
     return {k: ModelValues(v) for k, v in model_values.items()}, unit_dict
