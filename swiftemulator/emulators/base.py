@@ -124,7 +124,7 @@ class BaseEmulator(object):
 
         raise NotImplementedError
 
-    def interactive_plot(self, x: np.array, xlabel: str = "", ylabel: str = ""):
+    def interactive_plot(self, x: np.array, xlabel: str = "", ylabel: str = "", x_data: np.array = None, y_data: np.array = None):
         """
         Generates an interactive plot over which shows the emulator predictions
         for the input data passed to this method
@@ -160,6 +160,10 @@ class BaseEmulator(object):
 
         # Setting up initial value
         pred, pred_var = self.predict_values(x, param_means)
+        if (x_data is None) or (y_data is None):
+            ax.plot(x, pred, 'k--')
+        else:
+            ax.plot(x_data, y_data, 'k.')
         (line,) = ax.plot(x, pred)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
