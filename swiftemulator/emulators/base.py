@@ -124,38 +124,43 @@ class BaseEmulator(object):
 
         raise NotImplementedError
 
-    def interactive_plot(self, x: np.array, xlabel: str = '', ylabel: str = ''):
+    def interactive_plot(self, x: np.array, xlabel: str = "", ylabel: str = ""):
         """
         Generates an interactive plot over which shows the emulator predictions
         for the input data passed to this method
         """
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Slider
+
         fig, ax = plt.subplots()
         model_specification = self.model_specification
         param_means = {}
         sliders = []
         n_param = model_specification.number_of_parameters
-        fig.subplots_adjust(bottom=0.12+n_param*0.1)
+        fig.subplots_adjust(bottom=0.12 + n_param * 0.1)
         for i in range(n_param):
             # Extracting information needed for slider
             name = model_specification.parameter_names[i]
             lo_lim = sorted(model_specification.parameter_limits[i])[0]
             hi_lim = sorted(model_specification.parameter_limits[i])[1]
-            param_means[name] = (lo_lim + hi_lim)/2
+            param_means[name] = (lo_lim + hi_lim) / 2
 
             # Adding slider
             if model_specification.parameter_printable_names:
                 name = model_specification.parameter_printable_names[i]
-            slider_ax = fig.add_axes([0.35, i*0.1, 0.3, 0.1])
-            slider = Slider(ax=slider_ax, label=name,
-                            valmin=lo_lim, valmax=hi_lim,
-                            valinit=(lo_lim + hi_lim)/2)
+            slider_ax = fig.add_axes([0.35, i * 0.1, 0.3, 0.1])
+            slider = Slider(
+                ax=slider_ax,
+                label=name,
+                valmin=lo_lim,
+                valmax=hi_lim,
+                valinit=(lo_lim + hi_lim) / 2,
+            )
             sliders.append(slider)
 
         # Setting up initial value
         pred, pred_var = self.predict_values(x, param_means)
-        line, = ax.plot(x, pred)
+        (line,) = ax.plot(x, pred)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
 
@@ -167,6 +172,7 @@ class BaseEmulator(object):
             }
             pred, pred_var = self.predict_values(x, params)
             line.set_ydata(pred)
+
         for slider in sliders:
             slider.on_changed(update)
 
