@@ -85,7 +85,7 @@ class BaseEmulator(object):
         Parameters
         ----------
 
-        independent, np.array
+        independent: np.array
             Independent continuous variables to evaluate the emulator
             at. If the emulator is discrete, these are only allowed to be
             the discrete independent variables that the emulator was trained at
@@ -98,12 +98,12 @@ class BaseEmulator(object):
         Returns
         -------
 
-        dependent_predictions, np.array
+        dependent_predictions: np.array
             Array of predictions, if the emulator is a function f, these
             are the predicted values of f(independent) evaluted at the position
             of the input ``model_parameters``.
 
-        dependent_prediction_errors, np.array
+        dependent_prediction_errors: np.array
             Errors on the model predictions. For models where the errors are
             unconstrained, this is an array of zeroes.
 
@@ -124,10 +124,38 @@ class BaseEmulator(object):
 
         raise NotImplementedError
 
-    def interactive_plot(self, x: np.array, xlabel: str = "", ylabel: str = "", x_data: np.array = None, y_data: np.array = None):
+    def interactive_plot(
+        self,
+        x: np.array,
+        xlabel: str = "",
+        ylabel: str = "",
+        x_data: np.array = None,
+        y_data: np.array = None,
+    ):
         """
-        Generates an interactive plot over which shows the emulator predictions
-        for the input data passed to this method
+        Generates an interactive plot which displays the emulator predictions.
+        If no reference data is passed to be overplotted then the plot will
+        display a line which corresponds to the predictions for the mean
+        of the parameter values.
+
+        Parameters
+        ----------
+
+        x: np.array
+            Array of data for which the emulator should make predictions.
+
+        xlabel: str, optional
+            Label for horizontal axis on the resultant figure.
+
+        ylabel: str, optional
+            Label for vertical axis on the resultant figure.
+
+        x_data: np.array, optional
+            Array containing x-values of reference data to plot.
+
+        y_data: np.array, optional
+            Array containing y-values of reference data to plot.
+            Must be the same shape as x_data
         """
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Slider
@@ -161,9 +189,9 @@ class BaseEmulator(object):
         # Setting up initial value
         pred, pred_var = self.predict_values(x, param_means)
         if (x_data is None) or (y_data is None):
-            ax.plot(x, pred, 'k--')
+            ax.plot(x, pred, "k--")
         else:
-            ax.plot(x_data, y_data, 'k.')
+            ax.plot(x_data, y_data, "k.")
         (line,) = ax.plot(x, pred)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)

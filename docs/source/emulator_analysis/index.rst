@@ -153,6 +153,25 @@ This is implemented into the SWIFT-Emulator with
 sweep as `ModelValues` and `ModelParameters`
 containers, that are easy to parse. 
 
+Interactive plots
+-----------------
+
+Another way to explore the effect of varying the parameters is
+to try an interactive plot. Every emulator object contains an
+`interactive_plot` method. This generates a plot with a slider 
+for each parameter. The plot will update to show the emulator
+predictions when sliders are adjusted. 
+
+.. code-block:: python
+
+    schecter_emulator.interactive_plot(predict_x, xlabel="Stellar mass", ylabel="dn/dlogM")
+
+.. image:: interactive_plot.png
+
+It is possible to pass reference data to be plotted when calling 
+:meth:`swiftemulator.emulators.base.BaseEmulator.interactive\_plot`.
+
+
 Model Parameters Features
 -------------------------
 
