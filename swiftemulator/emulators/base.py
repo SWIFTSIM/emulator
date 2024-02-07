@@ -127,6 +127,7 @@ class BaseEmulator(object):
     def interactive_plot(
         self,
         x: np.array,
+        initial_params: Dict[str, float] = {},
         xlabel: str = "",
         ylabel: str = "",
         x_data: np.array = None,
@@ -134,15 +135,21 @@ class BaseEmulator(object):
     ):
         """
         Generates an interactive plot which displays the emulator predictions.
-        If no reference data is passed to be overplotted then the plot will
-        display a line which corresponds to the predictions for the mean
-        of the parameter values.
+        If initial_params should contain the initial parameter values to make a
+        prediction for. If initial_params is not passed the midpoint of each of
+        the parameter values will be used instead. If no reference data is
+        passed to be overplotted then the plot will display a line which
+        corresponds to the predictions for the initial parameter values.
 
         Parameters
         ----------
 
         x: np.array
             Array of data for which the emulator should make predictions.
+
+        initial_params: Dict[str, float], optional
+            What parameters values to plot the predicition for initally.
+            If missing the midpoint of each parameter range will be used.
 
         xlabel: str, optional
             Label for horizontal axis on the resultant figure.
@@ -162,7 +169,6 @@ class BaseEmulator(object):
 
         fig, ax = plt.subplots()
         model_specification = self.model_specification
-        param_means = {}
         sliders = []
         n_param = model_specification.number_of_parameters
         fig.subplots_adjust(bottom=0.12 + n_param * 0.1)
@@ -171,23 +177,25 @@ class BaseEmulator(object):
             name = model_specification.parameter_names[i]
             lo_lim = sorted(model_specification.parameter_limits[i])[0]
             hi_lim = sorted(model_specification.parameter_limits[i])[1]
-            param_means[name] = (lo_lim + hi_lim) / 2
+            if not name in initial_params:
+                initial_params[name] = (lo_lim + hi_lim) / 2
 
             # Adding slider
+            printable_name = name
             if model_specification.parameter_printable_names:
-                name = model_specification.parameter_printable_names[i]
+                printable_name = model_specification.parameter_printable_names[i]
             slider_ax = fig.add_axes([0.35, i * 0.1, 0.3, 0.1])
             slider = Slider(
                 ax=slider_ax,
-                label=name,
+                label=printable_name,
                 valmin=lo_lim,
                 valmax=hi_lim,
-                valinit=(lo_lim + hi_lim) / 2,
+                valinit=initial_params[name],
             )
             sliders.append(slider)
 
-        # Setting up initial value
-        pred, pred_var = self.predict_values(x, param_means)
+        # Plotting lines and reference data
+        pred, pred_var = self.predict_values(x, initial_params)
         if (x_data is None) or (y_data is None):
             ax.plot(x, pred, "k--")
         else:
