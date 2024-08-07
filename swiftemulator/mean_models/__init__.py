@@ -7,3 +7,4 @@ from swiftemulator.mean_models.base import MeanModel
 from swiftemulator.mean_models.linear import LinearMeanModel
 from swiftemulator.mean_models.offset import OffsetMeanModel
 from swiftemulator.mean_models.polynomial import PolynomialMeanModel
+from swiftemulator.mean_models.fixed import FixedMeanModel
