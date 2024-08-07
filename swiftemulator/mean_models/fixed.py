@@ -17,7 +17,7 @@ class FixedMeanModel(MeanModel):
     model and does not allow it to be changed.
     """
 
-    model: float
+    model: float = attr.ib(default=1.0)
 
     def train(self, independent: np.ndarray, dependent: np.ndarray) -> None:
         """
