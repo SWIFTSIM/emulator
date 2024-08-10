@@ -29,7 +29,7 @@ It includes functionality to:
   SWIFT that processed by VELOCIraptor and the swift-pipeline.
 
 Information about `SWIFT` can be found 
-`here <http://swift.dur.ac.uk/>`_, Information about 
+`here <http://www.swiftsim.com/>`_, Information about 
 `VELOCIraptor` can be found 
 `here <https://velociraptor-stf.readthedocs.io/en/latest/>`_
 and tnformation about the `SWIFT-pipeline` can be found 
