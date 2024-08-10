@@ -184,7 +184,8 @@ class MultipleGaussianProcessEmulator(BaseEmulator):
         model_parameters: Dict[str, float],
     ) -> np.array:
         """
-        Predict values from the trained emulator contained within this object.
+        Predict values and the associated variance from the trained emulator contained
+        within this object.
 
         Parameters
         ----------
@@ -207,6 +208,14 @@ class MultipleGaussianProcessEmulator(BaseEmulator):
 
         dependent_prediction_errors, np.array
             Errors on the model predictions.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction, or when attempting to evaluate the model at
+            disallowed independent variables.
 
         Notes
         -----
@@ -320,3 +329,140 @@ class MultipleGaussianProcessEmulator(BaseEmulator):
                 ]
 
         return dependent_predictions, dependent_prediction_errors
+
+    def predict_values_no_error(
+        self,
+        independent: np.array,
+        model_parameters: Dict[str, float],
+    ) -> np.array:
+        """
+        Predict values from the trained emulator contained within this object.
+        In cases where the error estimates are not required, this method is
+        significantly faster than predict_values().
+
+        Parameters
+        ----------
+
+        independent, np.array
+            Independent continuous variables to evaluate the emulator
+            at.
+
+        model_parameters: Dict[str, float]
+            The point in model parameter space to create predicted
+            values at.
+
+        Returns
+        -------
+
+        dependent_predictions, np.array
+            Array of predictions, if the emulator is a function f, these
+            are the predicted values of f(independent) evaluted at the position
+            of the input model_parameters.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction, or when attempting to evaluate the model at
+            disallowed independent variables.
+
+        Notes
+        -----
+
+        This will use the originally defined regions and overlaps will
+        be calculated by using the weighted linear sum corresponding
+        to the independent variable's distance to the adjacent boundary.
+        The errors use a weighted square sum.
+        """
+
+        if self.emulators is None:
+            raise AttributeError(
+                "Please train the emulator with fit_model before attempting "
+                "to make predictions."
+            )
+
+        # First, do individual predictions.
+
+        inputs = []
+        output = []
+
+        for index, (low, high) in enumerate(self.independent_regions):
+            mask = np.logical_and(
+                (
+                    independent > low
+                    if low is not None
+                    else np.ones_like(independent).astype(bool)
+                ),
+                (
+                    independent < high
+                    if high is not None
+                    else np.ones_like(independent).astype(bool)
+                ),
+            )
+
+            predicted = self.emulators[index].predict_values_no_error(
+                independent=independent[mask], model_parameters=model_parameters
+            )
+
+            inputs.append(list(independent[mask]))
+            output.append(list(predicted))
+
+        # Now that we've predicted it all, we need to explicitly deal
+        # with overlap and non-overlap.
+
+        overlap_ranges = {}
+
+        for index in range(1, len(self.independent_regions)):
+            left = self.independent_regions[index][0]
+            right = self.independent_regions[index - 1][1]
+
+            if right is None or left is None:
+                continue
+            elif right > left:
+                overlap_ranges[index - 1] = [left, right]
+
+        dependent_predictions = np.empty_like(independent)
+
+        current_emulator = 0
+
+        for index, x in enumerate(independent):
+            if x not in inputs[current_emulator]:
+                current_emulator += 1
+
+            # Is it in the prior overlap?
+            low, high = overlap_ranges.get(current_emulator - 1, [float("inf")] * 2)
+
+            if low <= x <= high:
+                # We have already counted this independent variable.
+                continue
+
+            # Is it in this emulator's overlap?
+            low, high = overlap_ranges.get(current_emulator, [float("inf")] * 2)
+
+            if low <= x <= high:
+                dependent_index_left = inputs[current_emulator].index(x)
+                dependent_index_right = inputs[current_emulator + 1].index(x)
+
+                ind_left = inputs[current_emulator][dependent_index_left]
+                ind_right = inputs[current_emulator + 1][dependent_index_right]
+
+                left_weight = (high - x) / (high - low)
+                right_weight = (x - low) / (high - low)
+
+                dependent_left = output[current_emulator][dependent_index_left]
+                dependent_right = output[current_emulator + 1][dependent_index_right]
+
+                dependent_predictions[index] = (
+                    dependent_left * left_weight + dependent_right * right_weight
+                )
+                dependent_prediction_errors[index] = math.sqrt(
+                    left_weight * dependent_error_left * dependent_error_left
+                    + right_weight * dependent_error_right * dependent_error_right
+                )
+            else:
+                # Easy!
+                dependent_index = inputs[current_emulator].index(x)
+                dependent_predictions[index] = output[current_emulator][dependent_index]
+
+        return dependent_predictions

@@ -255,6 +255,13 @@ class GaussianProcessEmulator(BaseEmulator):
 
         dependent_prediction_errors, np.array
             Errors (variances) on the model predictions.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction.
         """
 
         if self.emulator is None:
@@ -307,6 +314,13 @@ class GaussianProcessEmulator(BaseEmulator):
             Array of predictions, if the emulator is a function f, these
             are the predicted values of f(independent) evaluted at the position
             of the input model_parameters.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction.
         """
 
         if self.emulator is None:
