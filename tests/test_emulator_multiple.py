@@ -122,3 +122,4 @@ def test_basic_emulator_generator_multiple():
     )
 
     gpe.predict_values(np.array([0.2, 0.9, 9.9, 5.0]), {"x": 0.5, "y": 1})
+    gpe.predict_values_no_error(np.array([0.2, 0.9, 9.9, 5.0]), {"x": 0.5, "y": 1})
