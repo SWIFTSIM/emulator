@@ -226,7 +226,9 @@ class GaussianProcessEmulator1D(BaseEmulator):
 
         return
 
-    def predict_values(self, model_parameters: Dict[str, float]) -> np.array:
+    def predict_values(
+        self, model_parameters: Dict[str, float]
+    ) -> tuple[np.array, np.array]:
         """
         Predict a value from the trained emulator contained within this object.
         returns the value at the input model parameters.

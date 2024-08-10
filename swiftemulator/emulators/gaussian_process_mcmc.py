@@ -339,7 +339,7 @@ class GaussianProcessEmulatorMCMC(BaseEmulator):
         self,
         independent: np.array,
         model_parameters: Dict[str, float],
-    ) -> np.array:
+    ) -> tuple[np.array, np.array]:
         """
         Predict values from the trained emulator contained within this object.
 
