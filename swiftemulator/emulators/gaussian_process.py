@@ -229,7 +229,7 @@ class GaussianProcessEmulator(BaseEmulator):
 
     def predict_values(
         self, independent: np.array, model_parameters: Dict[str, float]
-    ) -> tuple[np.array, np.array]:
+    ) -> np.array:
         """
         Predict values and the associated variance from the trained emulator
         contained within this object.

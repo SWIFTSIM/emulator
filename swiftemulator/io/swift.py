@@ -103,8 +103,8 @@ def load_pipeline_outputs(
         "adaptive_mass_function",
         "histogram",
     ]
-    recursive_search = lambda d, k: (
-        d.get(k[0], recursive_search(d, k[1:])) if len(k) > 0 else None
+    recursive_search = (
+        lambda d, k: d.get(k[0], recursive_search(d, k[1:])) if len(k) > 0 else None
     )
     line_search = lambda d: recursive_search(d, line_types)
 

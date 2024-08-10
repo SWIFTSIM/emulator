@@ -182,7 +182,7 @@ class MultipleGaussianProcessEmulator(BaseEmulator):
         self,
         independent: np.array,
         model_parameters: Dict[str, float],
-    ) -> tuple[np.array, np.array]:
+    ) -> np.array:
         """
         Predict values from the trained emulator contained within this object.
 
@@ -231,16 +231,12 @@ class MultipleGaussianProcessEmulator(BaseEmulator):
 
         for index, (low, high) in enumerate(self.independent_regions):
             mask = np.logical_and(
-                (
-                    independent > low
-                    if low is not None
-                    else np.ones_like(independent).astype(bool)
-                ),
-                (
-                    independent < high
-                    if high is not None
-                    else np.ones_like(independent).astype(bool)
-                ),
+                independent > low
+                if low is not None
+                else np.ones_like(independent).astype(bool),
+                independent < high
+                if high is not None
+                else np.ones_like(independent).astype(bool),
             )
 
             predicted, errors = self.emulators[index].predict_values(
