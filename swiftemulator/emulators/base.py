@@ -170,7 +170,7 @@ class BaseEmulator(object):
             )
 
         raise NotImplementedError
-       
+
     def interactive_plot(
         self,
         x: np.array,
@@ -187,10 +187,10 @@ class BaseEmulator(object):
         the parameter values will be used instead. If no reference data is
         passed to be overplotted then the plot will display a line which
         corresponds to the predictions for the initial parameter values.
-        
+
         Parameters
         ----------
-        
+
         x: np.array
             Array of data for which the emulator should make predictions.
 
@@ -211,7 +211,7 @@ class BaseEmulator(object):
             Array containing y-values of reference data to plot.
             Must be the same shape as x_data
         """
-        
+
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Slider
 
