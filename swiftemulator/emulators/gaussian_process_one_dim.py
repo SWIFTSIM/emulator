@@ -228,8 +228,8 @@ class GaussianProcessEmulator1D(BaseEmulator):
 
     def predict_values(self, model_parameters: Dict[str, float]) -> np.array:
         """
-        Predict a value from the trained emulator contained within this object.
-        returns the value at the input model parameters.
+        Predict a value and associated variance from the trained emulator contained within
+        this object. Returns the value at the input model parameters.
 
         Parameters
         ----------
@@ -247,7 +247,14 @@ class GaussianProcessEmulator1D(BaseEmulator):
             of the input model_parameters.
 
         dependent_prediction_error, float
-            Error on the model prediction.
+            Error (variance) on the model prediction.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction.
         """
 
         if self.emulator is None:
@@ -271,3 +278,53 @@ class GaussianProcessEmulator1D(BaseEmulator):
         )
 
         return model[0], errors[0]
+
+    def predict_values_no_error(self, model_parameters: Dict[str, float]) -> np.array:
+        """
+        Predict a value and associated variance from the trained emulator contained within
+        this object. Returns the value at the input model parameters.
+
+        Parameters
+        ----------
+
+        model_parameters: Dict[str, float]
+            The point in model parameter space to create predicted
+            values at.
+
+        Returns
+        -------
+
+        dependent_prediction, float
+            Value of predictions, if the emulator is a function f, this
+            is the predicted value of f(independent) evaluted at the position
+            of the input model_parameters.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction.
+        """
+
+        if self.emulator is None:
+            raise AttributeError(
+                "Please train the emulator with fit_model before attempting "
+                "to make predictions."
+            )
+
+        model_parameter_array = np.array(
+            [model_parameters[parameter] for parameter in self.parameter_order]
+        )
+
+        # Create a fake duplicate as george always needs two points to predict
+        t = np.empty((2, len(model_parameter_array)), dtype=np.float32)
+
+        t[0] = model_parameter_array
+        t[1] = model_parameter_array
+
+        model = self.emulator.predict(
+            y=self.dependent_variables, t=t, return_cov=False, return_var=False
+        )
+
+        return model[0]

@@ -66,3 +66,4 @@ def test_basic_emulator_generator():
     )
 
     gpe.predict_values([0, 7], {"x": 1.5, "y": 1.0})
+    gpe.predict_values_no_error([0, 7], {"x": 1.5, "y": 1.0})

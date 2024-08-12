@@ -166,7 +166,8 @@ class LinearModelEmulator(BaseEmulator):
         self, independent: np.array, model_parameters: Dict[str, float]
     ) -> np.array:
         """
-        Predict values from the trained emulator contained within this object.
+        Predict values and the associated variance from the trained emulator contained
+        within this object.
 
         Parameters
         ----------
@@ -190,6 +191,13 @@ class LinearModelEmulator(BaseEmulator):
         dependent_prediction_errors, np.array
             Errors on the model predictions. For the linear model these are
             all zeroes, as the errors are unconstrained.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction.
         """
 
         if self.emulator is None:
@@ -213,3 +221,60 @@ class LinearModelEmulator(BaseEmulator):
         model = self.emulator.predict(X=t)
 
         return model, np.zeros_like(model)
+
+    def predict_values_no_error(
+        self, independent: np.array, model_parameters: Dict[str, float]
+    ) -> np.array:
+        """
+        Predict values from the trained emulator contained within this object.
+        In cases where the error estimates are not required, this method is
+        significantly faster than predict_values().
+
+        Parameters
+        ----------
+
+        independent, np.array
+            Independent continuous variables to evaluate the emulator
+            at.
+
+        model_parameters: Dict[str, float]
+            The point in model parameter space to create predicted
+            values at.
+
+        Returns
+        -------
+
+        dependent_predictions, np.array
+            Array of predictions, if the emulator is a function f, these
+            are the predicted values of f(independent) evaluted at the position
+            of the input model_parameters.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction.
+        """
+
+        if self.emulator is None:
+            raise AttributeError(
+                "Please train the emulator with fit_model before attempting "
+                "to make predictions."
+            )
+
+        model_parameter_array = np.array(
+            [model_parameters[parameter] for parameter in self.parameter_order]
+        )
+
+        t = np.empty(
+            (len(independent), len(model_parameter_array) + 1), dtype=np.float32
+        )
+
+        for line, value in enumerate(independent):
+            t[line][0] = value
+            t[line][1:] = model_parameter_array
+
+        model = self.emulator.predict(X=t)
+
+        return model

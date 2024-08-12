@@ -269,7 +269,8 @@ class GaussianProcessEmulatorBins(BaseEmulator):
         self, independent: np.array, model_parameters: Dict[str, float]
     ) -> np.array:
         """
-        Predict values from the trained emulator contained within this object.
+        Predict values and the associated variance from the trained emulator contained
+        within this object.
 
         Parameters
         ----------
@@ -365,3 +366,97 @@ class GaussianProcessEmulatorBins(BaseEmulator):
             np.array(dependent_predictions),
             np.array(dependent_prediction_errors),
         )
+
+    def predict_values_no_error(
+        self, independent: np.array, model_parameters: Dict[str, float]
+    ) -> np.array:
+        """
+        Predict values from the trained emulator contained within this object.
+        In cases where the error estimates are not required, this method is
+        significantly faster than predict_values().
+
+        Parameters
+        ----------
+
+        independent, np.array
+            Independent continuous variables to evaluate the emulator
+            at. If the emulator is discrete, these are only allowed to be
+            the discrete independent variables that the emulator was trained at
+            (disregarding the additional 'independent' model parameters, below).
+            These can be found in this object in the ``bin_centers`` attribute.
+
+        model_parameters: Dict[str, float]
+            The point in model parameter space to create predicted
+            values at.
+
+        Returns
+        -------
+
+        dependent_predictions, np.array
+            Array of predictions, if the emulator is a function f, these
+            are the predicted values of f(independent) evaluted at the position
+            of the input ``model_parameters``.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction, or when attempting to evaluate the model at
+            disallowed independent variables.
+        """
+
+        if self.bin_gaussian_process is None:
+            raise AttributeError(
+                "Please train the emulator with fit_model before attempting "
+                "to make predictions."
+            )
+
+        # First calculate which indices in bin_centers (and hence
+        # bin_gaussian_processes) correspond to the requested ``independent``
+        # variables.
+
+        array_centers = np.array(self.bin_centers)
+        gpe_ordering = []
+
+        for requested_independent_variable in independent:
+            try:
+                gpe_ordering.append(
+                    np.where(array_centers == requested_independent_variable)[0][0]
+                )
+            except IndexError:
+                raise AttributeError(
+                    f"Requested independent variable {independent} not valid, ",
+                    f"this instance of GPE Bins is only valid at {array_centers}.",
+                )
+
+        model_parameter_array = np.array(
+            [model_parameters[parameter] for parameter in self.parameter_order]
+        )
+
+        # George must predict a value for more than one point at a time, so
+        # generate two fake points either side of the one of interest.
+        model_parameter_array_sample = np.append(
+            0.98 * model_parameter_array, model_parameter_array
+        )
+        model_parameter_array_sample = np.append(
+            model_parameter_array_sample, 1.02 * model_parameter_array
+        ).reshape(3, len(model_parameter_array))
+
+        dependent_predictions = []
+
+        for emulator_index in gpe_ordering:
+            gp = self.bin_gaussian_process[emulator_index]
+            model_values = self.bin_model_values[emulator_index]
+
+            model = gp.predict(
+                y=model_values["dependent"],
+                t=model_parameter_array_sample,
+                return_cov=False,
+                return_var=False,
+            )
+
+            # Remove fake points required to ensure george returns a prediction.
+            dependent_predictions.append(model[1])
+
+        return np.array(dependent_predictions)

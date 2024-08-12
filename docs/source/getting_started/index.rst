@@ -198,6 +198,13 @@ model.
 Which shows that the emulator can predict the model with
 high accuracy.
 
+Note that the `predict_values()` method also returns the estimated
+variance of the values it returns. In cases where the variance is
+not required, the method `predict_values_no_error()` can instead be
+used. In some cases, this latter function can be much faster than the
+one additionally returning the variances.
+
+
 .. image:: predict_vs_model.png
 
 This covers the most basic way to use SWIFT-Emulator and

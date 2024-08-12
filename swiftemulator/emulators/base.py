@@ -80,7 +80,8 @@ class BaseEmulator(object):
         self, independent: np.array, model_parameters: Dict[str, float]
     ) -> np.array:
         """
-        Predict values from the trained emulator contained within this object.
+        Predict values and the associated variance from the trained emulator contained
+        within this object.
 
         Parameters
         ----------
@@ -124,6 +125,52 @@ class BaseEmulator(object):
 
         raise NotImplementedError
 
+    def predict_values_no_error(
+        self, independent: np.array, model_parameters: Dict[str, float]
+    ) -> np.array:
+        """
+        Predict values from the trained emulator contained within this object.
+        In cases where the error estimates are not required, this method is
+        significantly faster than predict_values().
+
+        Parameters
+        ----------
+
+        independent, np.array
+            Independent continuous variables to evaluate the emulator
+            at. If the emulator is discrete, these are only allowed to be
+            the discrete independent variables that the emulator was trained at
+            (disregarding the additional 'independent' model parameters, below.)
+
+        model_parameters: Dict[str, float]
+            The point in model parameter space to create predicted
+            values at.
+
+        Returns
+        -------
+
+        dependent_predictions, np.array
+            Array of predictions, if the emulator is a function f, these
+            are the predicted values of f(independent) evaluted at the position
+            of the input ``model_parameters``.
+
+        Raises
+        ------
+
+        AttributeError
+            When the model has not been trained before trying to make a
+            prediction, or when attempting to evaluate the model at
+            disallowed independent variables.
+        """
+
+        if self.emulator is None:
+            raise AttributeError(
+                "Please train the emulator with fit_model before attempting "
+                "to make predictions."
+            )
+
+        raise NotImplementedError
+       
     def interactive_plot(
         self,
         x: np.array,
@@ -140,10 +187,10 @@ class BaseEmulator(object):
         the parameter values will be used instead. If no reference data is
         passed to be overplotted then the plot will display a line which
         corresponds to the predictions for the initial parameter values.
-
+        
         Parameters
         ----------
-
+        
         x: np.array
             Array of data for which the emulator should make predictions.
 
@@ -164,6 +211,7 @@ class BaseEmulator(object):
             Array containing y-values of reference data to plot.
             Must be the same shape as x_data
         """
+        
         import matplotlib.pyplot as plt
         from matplotlib.widgets import Slider
 
